@@ -20,23 +20,23 @@ class Competiteur :
 		course = (nom_course, niv, date, points)
 		self.L_courses.append(course)
 	
-	def get_moy_(self, date_calcul, calcul_moy) :
+	def get_val_(self, date_calcul, calcul_val) :
 		date_lim = date_calcul.replace(year = date_calcul.year - 1)
 		L_courses_calcul =list()
 		for course in self.L_courses :
 			if course[2] > date_lim and course[2] <= date_calcul :
 				# La course a eu lieu entre 1 an avant le calul et la date du calcul
 				L_courses_calcul.append(course)
-		return calcul_moy(L_courses_calcul)
+		return calcul_val(L_courses_calcul)
 	
-	def get_moy(cls, nom, emb, date_calcul, calcul_moy) :
+	def get_val(cls, nom, emb, date_calcul, calcul_val) :
 		competiteur = cls.dic_competiteurs.get((nom, emb))
 		if competiteur is not None :
 			# le competiteur est dans le dico des competiteurs
-			return competiteur.get_moy_(date_calcul, calcul_moy)
+			return competiteur.get_val_(date_calcul, calcul_val)
 		else :
-			return calcul_moy(list())
-	get_moy = classmethod(get_moy)
+			return calcul_val(list())
+	get_val = classmethod(get_val)
 	
 	def add_course(cls, nom_course, date_course, niv, noms, embs, points) :
 		for i in range(len(noms)):
@@ -59,16 +59,16 @@ def test_add_course_() :
 	print(Competiteur.dic_competiteurs)
 	print(competiteur1.L_courses)
 
-def test_get_moy_():
+def test_get_val_():
 	competiteur1 = Competiteur("charles", "C1H")
 	competiteur1.add_course_("chelles", "reg", date(2020, 4, 5), 400)
-	competiteur1.get_moy_(date(2020, 4, 5), print)
+	competiteur1.get_val_(date(2020, 4, 5), print)
 
-def test_get_moy() :
+def test_get_val() :
 	competiteur1 = Competiteur("charles", "C1H")
 	competiteur1.add_course_("chelles", "reg", date(2020, 4, 5), 400)
-	Competiteur.get_moy("charles", "C1H", date(2020, 4, 5), print)
-	Competiteur.get_moy("charles", "K1H", date(2020, 4, 5), print)
+	Competiteur.get_val("charles", "C1H", date(2020, 4, 5), print)
+	Competiteur.get_val("charles", "K1H", date(2020, 4, 5), print)
 
 def test_add_course():
 	niv = "reg"
@@ -78,9 +78,9 @@ def test_add_course():
 	embs = ["C1H", "K1H", "INV"]
 	points = [350, 400, 450]
 	Competiteur.add_course("corbeil", date(2020, 4, 5), niv, noms, embs, points)
-	Competiteur.get_moy("charles", "C1H", date(2020, 4, 5), print)
-	Competiteur.get_moy("yohan", "K1H", date(2020, 4, 5), print)
-	Competiteur.get_moy("fanny", "INV", date(2020, 4, 5), print)
+	Competiteur.get_val("charles", "C1H", date(2020, 4, 5), print)
+	Competiteur.get_val("yohan", "K1H", date(2020, 4, 5), print)
+	Competiteur.get_val("fanny", "INV", date(2020, 4, 5), print)
 
 if __name__ == "__main__" :
 	pass
