@@ -10,7 +10,7 @@ import requests
 import csv
 import time
 
-class Competition(object) :
+class Scrappeur(object) :
 	def __init__(self) :
 		self.domain = "http://www.ffcanoe.asso.fr"
 		self.url = self.domain + "/eau_vive/slalom/classement/evenements/index"
@@ -66,7 +66,7 @@ class Competition(object) :
 			niv = self.niveaux[i]
 			phase = self.phases[i]
 			title, names_list, emb_list, score_list, val_list, points_list,\
-				final_type_list = 	Competition.get_competition_infos(url)
+				final_type_list = 	Scrappeur.get_competition_infos(url)
 			print(niv + " " + event_name + " " + phase + " : " + title +
 				 " Nombre de compétiteurs : " + str(len(names_list)) +
 				 " Premier compétiteur : " + str(names_list[0]) + ", embarquation : " +
@@ -80,11 +80,11 @@ class Competition(object) :
 			phase = self.phases[i]
 			event = self.event_names[i]
 			title, names_list, emb_list, score_list, val_list, points_list, final_type_list\
-				= Competition.get_competition_infos(url)
+				= Scrappeur.get_competition_infos(url)
 			print("Sauvegarde de la course " + title + " (course " + str(i) + "/" +
 												   str(len(self.competitions_url)) +
 												   ")")
-			Competition.save_competition(rep, title, event, niv, phase, names_list, emb_list,
+			Scrappeur.save_competition(rep, title, event, niv, phase, names_list, emb_list,
 								score_list, val_list, points_list, final_type_list)
 	
 	def get_row_infos(row) :
@@ -119,7 +119,7 @@ class Competition(object) :
 					categorie = ligne.find("th").text
 			else :
 				if ligne.get("class") in [["paire"],["impaire"]] : #ligne de détail de pénalités
-					nom, score, valeur, points = Competition.get_row_infos(ligne)
+					nom, score, valeur, points = Scrappeur.get_row_infos(ligne)
 					if categorie != "INV" :
 						names_list.append(nom)
 						emb_list.append(categorie)
@@ -142,7 +142,7 @@ class Competition(object) :
 		tables = soup.find_all("table", {"id": "tableResults"})
 		if len(tables) == 1 :
 			names_list, emb_list, score_list, val_list, points_list, final_type_list\
-				= Competition.get_table_infos(tables[0])
+				= Scrappeur.get_table_infos(tables[0])
 			return title, names_list, emb_list, score_list, val_list, points_list,\
 				final_type_list
 		else :
@@ -155,7 +155,7 @@ class Competition(object) :
 			final_type_list_glob = list()
 			for  i in range(len(final_types)) :
 				names_list, emb_list, score_list, val_list, points_list, final_type_list\
-				= Competition.get_table_infos(tables[i], final_type=final_types[i])
+				= Scrappeur.get_table_infos(tables[i], final_type=final_types[i])
 				names_list_glob += names_list
 				emb_list_glob += emb_list
 				score_list_glob += score_list
@@ -167,7 +167,7 @@ class Competition(object) :
 	
 	def save_competition(rep, titre, event_name, niveau, phase, names_list, emb_list,
 					  score_list, val_list, points_list, final_type_list) :
-		date = Competition.get_date(titre)
+		date = Scrappeur.get_date(titre)
 		event_name = event_name.replace('/', ' sur ')
 		phase = phase.replace("1/2", "demi")
 		file_path = rep + "/" + date + "-" + event_name + "-" + phase + ".csv"
@@ -186,14 +186,14 @@ class Competition(object) :
 
 		
 if __name__ =="__main__" :
-	comp = Competition()
+	comp = Scrappeur()
 	comp.get_all_competitions_url()
 	comp.save_all_files()
 	"""
 	rep = "/home/charles/calcul_de_points/database"
 	title, names_list, emb_list, score_list, val_list, points_list, final_type_list\
-		= Competition.get_competition_infos(comp.competitions_url[0])
-	Competition.save_competition(rep, title, comp.niveaux[0], comp.phases[0], names_list,
+		= Scrappeur.get_competition_infos(comp.competitions_url[0])
+	Scrappeur.save_competition(rep, title, comp.niveaux[0], comp.phases[0], names_list,
 							  emb_list, score_list, val_list, points_list,
 							  final_type_list)
 	"""
