@@ -46,7 +46,7 @@ class PointsComputer:
 		
 		
 		####### Ajout du malus de phase et de division
-		# TODO MALUS = calcul_malus(competition)
+		calcul_malus(competition)
 		MALUS = 0
 		points += MALUS
 		

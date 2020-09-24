@@ -11,7 +11,6 @@ from copy import deepcopy
 
 import numpy as np
 
-
 class Competiteur :
 	"""
 	Chaque compétiteur comporte son nom, son embarcation et la liste de ses courses. Chaque course est représentée sous la forme d'un tuple (nom_course, niv, date, points) où la date est une instance de la classe "date".

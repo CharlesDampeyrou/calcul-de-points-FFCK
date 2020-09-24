@@ -46,9 +46,9 @@ class Competition:
 		try:
 			new_points = point_computer.compute_points(self, ranking)
 		except NoCompetitorException:
-			logging.warning("Les points de la course : "+self.nom_course+" n'ont pas pu etre mis a jour car la competition ne comporte pas d'embarquation individuelle.")
+			logging.info("Les points de la course : "+self.nom_course+" n'ont pas pu etre mis a jour car la competition ne comporte pas d'embarquation individuelle.")
 			new_points = np.array([])
 		except NotEnoughCompetitorException as e:
-			logging.warning(repr(e))
+			logging.info(repr(e))
 			raise e
 		self.points = new_points

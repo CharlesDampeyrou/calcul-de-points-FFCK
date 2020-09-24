@@ -13,11 +13,11 @@ def calcul_malus(competition):
 	malus = np.zeros((competition.noms.shape[0],))
 	if competition.phase == "qualif":
 		malus += 10
-	if competition.niveau.lower() == "regionnal":
+	if competition.niveau == "Régional":
 		malus += 40
-	elif competition.niveau.lower() in ["nationale 1", "nationale 2", "nationale 3"]:
+	elif competition.niveau in ["Nationale 1", "Nationale 2", "Nationale 3"]:
 		malus +=5
-	else:
+	elif competition.niveau != "Championnats de France":
 		logging.warning("Attention course autre que nationnale ou régionnale : "+competition.niveau)
 	malus[np.where(competition.finale_a_b=="Finale B")[0]] += 5
 	return malus

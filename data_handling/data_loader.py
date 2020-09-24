@@ -13,7 +13,7 @@ import os
 import numpy as np
 import random as rd
 
-from competition import Competition
+from domain.competition import Competition
 
 def is_competition_file(file) :
 	try :
@@ -66,9 +66,9 @@ def get_competition(file_path) :
 		phase = simplify_phase(first_line[1])
 		date_course = date_from_iso(first_line[2])
 		niveau = first_line[3]
-		
+
 		reader.__next__() # Deuxième ligne inutile
-		
+
 		noms = list()
 		embs = list()
 		scores = list()
@@ -207,12 +207,12 @@ def test_get_competition() :
 			print(noms[i] + ", " + embs[i] + ", " + str(scores[i]) + ", " + str(valeurs[i]) + ", " + str(points[i]) + ", " + str(finale_a_b[i]))
 		print("\n\n")
 		return
-	
+
 	rep = "/home/charles/database_courses_ffck"
 	files_list = os.listdir(rep)
 	rd.shuffle(files_list)
 	file_paths = [rep + "/" + file for file in files_list[:15]]
-	
+
 	for file_path in file_paths :
 		show_competition(file_path)
 	return
