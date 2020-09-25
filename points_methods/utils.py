@@ -18,7 +18,8 @@ def calcul_malus(competition):
 	elif competition.niveau in ["Nationale 1", "Nationale 2", "Nationale 3"]:
 		malus +=5
 	elif competition.niveau != "Championnats de France":
-		logging.warning("Attention course autre que nationnale ou régionnale : "+competition.niveau)
+		logger = logging.getLogger("points_methods.utils.calcul_malus")
+		logger.warning("Attention course autre que nationnale ou régionnale : "+competition.niveau)
 	malus[np.where(competition.finale_a_b=="Finale B")[0]] += 5
 	return malus
 

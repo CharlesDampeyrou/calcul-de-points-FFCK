@@ -66,11 +66,3 @@ def compute_database(start_date, end_date, points_computer):
 
 		start_date += timedelta(days=1)
 	return database
-
-
-
-if __name__ == "__main__":
-	#points_computer = OriginalPointsComputer()
-	logging.basicConfig(level=logging.WARNING)
-	points_computer = ClassicPointsComputer()
-	database = compute_database(date(2010,1,1), date(2020, 7, 29), points_computer)

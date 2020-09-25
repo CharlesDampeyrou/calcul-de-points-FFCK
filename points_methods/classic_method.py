@@ -15,54 +15,55 @@ from points_methods.exceptions import NoCompetitorException, NotEnoughCompetitor
 class PointsComputer:
 	def __init__(self):
 		self.coef_inter_cat = {"K1H":1, "C1H":1.05, "C1D":1.2, "K1D":1.13, "C2H":1.1, "C2D":1.3, "C2M":1.2}
-		
-	
+		self.logger = logging.getLogger("points_methods.classic_method")
+
+
 	def compute_points(self, competition, ranking):
-		logging.info("Calcul des points de la course : " + competition.nom_course)
+		self.logger.info("Calcul des points de la course : " + competition.nom_course)
 		# Levée d'une Exception s'il n'y a aucun compétiteur
 		if len(competition.noms) == 0:
 			raise NoCompetitorException()
 		######## Calcul du temps scratch
 		tps_scratch = self.calcul_tps_scratch(competition)
-		
-		
+
+
 		######## Calcul du temps de base
 		tps_base, pen_manque_competiteurs = self.calcul_tps_base(competition, tps_scratch)
-		
-		
+
+
 		####### Calcul du nombre de points
 		points = 1000*(tps_scratch-tps_base)/tps_base
 		points += pen_manque_competiteurs
-		
-		
+
+
 		####### Calcul des pénalités de course
 		PEN = calcul_pen_tps_course(tps_scratch)
 		points += PEN
-		
-		
+
+
 		####### Calcul du coefficient correcteur
 		COEF = self.calcul_coef_correcteur(points, competition, ranking)
 		points *=COEF
-		
-		
+
+
 		####### Ajout du malus de phase et de division
 		calcul_malus(competition)
 		MALUS = 0
 		points += MALUS
-		
-		
+
+
 		####### Verification que les points sont positifs
 		points -= min(0, np.min(points))
-		
+
 		return points
-	
+
 	def calcul_tps_scratch(self, competition):
 		tps_scratch = np.zeros((len(competition.noms),))
 		for i in range(competition.noms.shape[0]):
 			coef = self.coef_inter_cat[competition.embs[i]]
 			tps_scratch[i] = competition.scores[i]/coef
 		return tps_scratch
-	
+
 	def calcul_tps_base(self, competition, tps_scratch):
 		# Recherche des 10 meilleurs scores
 		valeur_max = self.get_valeur_max(competition)
@@ -74,17 +75,17 @@ class PointsComputer:
 		pen_manque_competiteurs = 0
 		if indices_meilleurs.shape[0] < 10:
 			pen_manque_competiteurs = 20*(10-indices_meilleurs.shape[0])
-		
+
 		#calcul des temps fictifs
 		tps_fictifs = self.calcul_tps_fictif(competition, indices_meilleurs)
-		
+
 		# Suppression des 2 temps les plus éloignés
 		ecart_moyenne = np.absolute(tps_fictifs-np.mean(tps_fictifs))
 		nb_comp_tps_base = min(8, indices_meilleurs.shape[0])
 		indices_tps_base = np.argsort(ecart_moyenne)[:nb_comp_tps_base]
 		tps_base = tps_fictifs[indices_tps_base].mean()
 		return tps_base, pen_manque_competiteurs
-	
+
 	def get_valeur_max(self, competition):
 		if competition.niveau == "Nationale 1":
 			valeur_max = 150
@@ -93,7 +94,7 @@ class PointsComputer:
 		else:
 			valeur_max = 500
 		return valeur_max
-	
+
 	def get_indices_meilleurs(self, competition, tps_scratch, valeur_max):
 		indices_meilleurs = list()
 		indices_ordonnes = np.argsort(tps_scratch)
@@ -103,14 +104,14 @@ class PointsComputer:
 				if len(indices_meilleurs) == 10:
 					break
 		return np.array(indices_meilleurs)
-	
+
 	def calcul_tps_fictif(self, competition, indices_meilleurs):
 		temps_fictifs = list()
 		for i in indices_meilleurs:
 			temps_fictifs.append(1000*competition.scores[i]/(competition.moyennes[i]+1000))
 		temps_fictifs = np.array(temps_fictifs)
 		return temps_fictifs
-	
+
 	def calcul_coef_correcteur(self, points, competition, ranking):
 		nb_competiteurs = points.shape[0]
 		pts_initiaux = 0
@@ -129,9 +130,3 @@ class PointsComputer:
 		if pts_apres_course == 0:
 			return 1
 		return pts_initiaux/pts_apres_course
-
-
-
-
-
-

@@ -1,0 +1,40 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  simple:
+    format: "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: simple
+    level: DEBUG
+
+root:
+  handlers: [ console ]
+  level: DEBUG
+
+loggers:
+  main:
+    level: DEBUG
+    handlers: [ console ]
+    qualname: main
+    propagate: false
+  domain.Competition:
+    level: DEBUG
+    handlers: [ console ]
+    qualname: domain.Competition
+    propagate: false
+  points_methods.utils.calcul_malus:
+    level: INFO
+    handlers: [ console ]
+    qualname: points_methods.utils.calcul_malus
+    propagate: false
+  points_methods.classic_method:
+    level: DEBUG
+    handlers: [ console ]
+    qualname: points_methods.classic_method
+    propagate: false
+
+  # thirdparty

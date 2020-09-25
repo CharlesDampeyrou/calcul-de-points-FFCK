@@ -8,6 +8,7 @@ Created on Tue Jul 28 16:18:00 2020
 import logging
 
 import numpy as np
+
 from points_methods.exceptions import NoCompetitorException, NotEnoughCompetitorException
 
 class Competition:
@@ -25,7 +26,8 @@ class Competition:
 		self.moyennes = moyennes
 		self.points = points
 		self.finale_a_b = finale_a_b
-	
+		self.logger = logging.getLogger("domain.Competition")
+
 	def update_val(self, ranking, date_calcul):
 		"""
 		Méthode pour mettre à jour les valeurs des compétiteurs de la course à la date souhaitée, à l'aide du classement (objet Classement) valide à cette date.
@@ -38,7 +40,7 @@ class Competition:
 				self.moyennes[num_competitor] = competitor.get_val(date_calcul).moyenne
 			else:
 				self.moyennes[num_competitor] = np.nan
-	
+
 	def update_points(self, ranking, point_computer):
 		"""
 		Méthode pour mettre à jour les points de la course avec l'objet point_computer fourni.
@@ -46,9 +48,9 @@ class Competition:
 		try:
 			new_points = point_computer.compute_points(self, ranking)
 		except NoCompetitorException:
-			logging.info("Les points de la course : "+self.nom_course+" n'ont pas pu etre mis a jour car la competition ne comporte pas d'embarquation individuelle.")
+			self.logger.info("Les points de la course : "+self.nom_course+" n'ont pas pu etre mis a jour car la competition ne comporte pas d'embarquation individuelle.")
 			new_points = np.array([])
 		except NotEnoughCompetitorException as e:
-			logging.info(repr(e))
+			self.logger.info(repr(e))
 			raise e
 		self.points = new_points
