@@ -10,4 +10,5 @@ Le code fourni est du code python 3 nécessitant l'installation des modules pré
 
 ## Récupération des données des courses
 
-Le script scraping.py permet de récupérer les données des courses depuis 2001. La variable "rep" de la méthode "save_all_files" spécifie l'emplacement du dossier où sauvegarder toutes les courses.
+Le script scraping.py permet de récupérer les données des courses depuis 2001.
+La variable optionnelle "rep" permet de spécifier le chemin d'accès à la base de données.

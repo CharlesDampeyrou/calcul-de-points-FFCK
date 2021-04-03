@@ -3,11 +3,12 @@
 This module defines helper classes for logging initialisation
 """
 import logging.config
+from pathlib import Path
 
 import yaml
 
 
-def load_logging_configuration(logging_config_file_name):
+def load_logging_configuration(logging_config_file_name=Path(Path.cwd(), "tools", "logging.yml")):
     """
     Load the logging configuration from a file
     Args:
