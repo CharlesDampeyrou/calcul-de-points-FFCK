@@ -161,7 +161,7 @@ class DatabaseService:
         query = {"competitorName":competitor_name,
                  "competitorCategory":competitor_category,
                  "date":date,
-                 "valueType":value_type}
+                 "valueTypes":value_type}
         return self.db["values"].find_one(query)
     
     def add_value(self,
@@ -250,7 +250,7 @@ def create_participation_dict(competitor_name,
     participation["finalType"] = final_type
     participation["score"] = score
     participation["pointTypes"] = list() if original_point is None else ["scrapping"]
-    participation["valuesTypes"] = list() if original_value is None else ["scrapping"]
+    participation["valueTypes"] = list() if original_value is None else ["scrapping"]
     participation["points"] = dict() if original_point is None else {"scrapping": original_point}
     if original_value is None:
         participation["values"] = dict()

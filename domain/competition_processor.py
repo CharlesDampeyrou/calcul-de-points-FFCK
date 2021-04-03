@@ -31,6 +31,7 @@ class CompetitionProcessor:
             for phase in phases:
                 competition_names = list(self.database_service.get_competition_list(competition_date,
                                                                                     phase=phase))
-                
-                self.point_computer.compute_and_save_points(competition_names, phase) if competition_names else None
-                # La méthode n'est pas appelée si la liste est vide
+                if competition_names: # La méthode n'est pas appelée si la liste est vide
+                    self.point_computer.compute_and_save_points(competition_names=competition_names,
+                                                                phase=phase)
+               

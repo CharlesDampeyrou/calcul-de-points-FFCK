@@ -23,7 +23,8 @@ class PointsComputer:
         self.database_service = database_service
         self.logger = logging.getLogger("points_methods.classic_method")
     
-    def compute_and_save_points(self, competition_names, phase):
+    def compute_and_save_points(self, **kwargs):
+        competition_names, phase = kwargs["competition_names"], kwargs["phase"]
         for competition_name in competition_names:
             self.value_accessor.compute_and_save_competition_values(competition_name, phase)
 

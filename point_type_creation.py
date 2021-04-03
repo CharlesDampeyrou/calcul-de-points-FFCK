@@ -18,12 +18,12 @@ from points_methods.current_method import PointsComputer
 if __name__ == "__main__":
     logging_file = Path(Path.cwd(),"tools", "logging.yml")
     load_logging_configuration(logging_file)
-    point_type = "original_calculation_initialized_2018_01_01"
-    value_type = "3_4_original_calculation_initialized_2018_01_01"
+    point_type = "original_calculation_initialized_2014_01_01"
+    value_type = "3_4_original_calculation_initialized_2014_01_01"
     nb_nat_min = 3
     nb_comp_min = 4
     competition_validity_period = timedelta(days=365)
-    starting_date = datetime(2018, 1, 1)
+    starting_date = datetime(2014, 1, 1)
     
     database_service = DatabaseService()
     Value = ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type)
