@@ -60,8 +60,8 @@ def ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type):
             self.nb_comp_min = nb_comp_min
             self.logger = logging.getLogger("Value")
         
-        def get_value_from_participations(participations, use_scrapping_points=False):
-            point_type = "scrapping" if use_scrapping_points else Value.POINT_TYPE
+        def get_value_from_participations(participations):
+            point_type = Value.POINT_TYPE
             if len(participations) == 0 :
                 return Value(1000, 0, 0) #convention si le compétiteur n'a pas de course
             comp_reg_list = list()

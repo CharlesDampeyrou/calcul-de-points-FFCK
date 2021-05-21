@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import spearmanr
 
 from tools.init_logging import load_logging_configuration
 from data_handling.database_service import DatabaseService
@@ -20,6 +21,8 @@ class Analyst:
     def __init__(self, database_service, value_accessor):
         self.database_service = database_service
         self.value_accessor = value_accessor
+        self.point_type = value_accessor.Value.POINT_TYPE
+        self.value_type = value_accessor.value_type
         self.logger = logging.getLogger("Analyst")
     
     def show_value_and_ranking_evolution(self,
@@ -27,7 +30,7 @@ class Analyst:
                                          ending_date,
                                          timestep=timedelta(days=7),
                                          point_limits=[50, 150, 250],
-                                         ranking_limits=[50, 250, 500]): #TODO
+                                         ranking_limits=[50, 250, 500]):
         current_date = starting_date
         ranking_for_points_limit = list()
         points_for_ranking_limit = list()
@@ -71,16 +74,19 @@ class Analyst:
         axs[1].legend(loc='best')
         plt.show()
     
-    def show_improvement_rate_evolution(self, starting_date, ending_date, point_type, levels=["all"]):
+    def show_improvement_rate_evolution(self,
+                                        starting_date,
+                                        ending_date,
+                                        levels=["all"]):
         for level in levels:
             rates = list()
             dates = list()
-            competition_list = self.database_service.get_competition_list_on_period(starting_date,
-                                                                                    ending_date,
-                                                                                    level=level)
+            competition_list = self.database_service.get_competitions_on_period(starting_date,
+                                                                                ending_date,
+                                                                                level=level)
             for competition_name in competition_list:
                 participations = self.database_service.get_competition_participations(competition_name)
-                rate = compute_improvement_rate(participations, point_type) 
+                rate = compute_improvement_rate(participations, self.point_type, self.value_type) 
                 if not np.isnan(rate):
                     rates.append(rate)
                     dates.append(self.database_service.get_competition_date(competition_name))
@@ -91,15 +97,18 @@ class Analyst:
         plt.title("Part des compétiteurs faisant une performance meilleure que leur moyenne")
         plt.show()
     
-    def compute_improvement_rate_evolution(self, starting_date, ending_date, point_type, levels=["all"]):
+    def compute_improvement_rate_evolution(self,
+                                           starting_date,
+                                           ending_date,
+                                           levels=["all"]):
         for level in levels:
             rates = list()
-            competition_list = self.database_service.get_competition_list_on_period(starting_date,
-                                                                                    ending_date,
-                                                                                    level=level)
+            competition_list = self.database_service.get_competitions_on_period(starting_date,
+                                                                                ending_date,
+                                                                                level=level)
             for competition_name in competition_list:
                 participations = self.database_service.get_competition_participations(competition_name)
-                rate = compute_improvement_rate(participations, point_type) 
+                rate = compute_improvement_rate(participations, self.point_type, self.value_type) 
                 if not np.isnan(rate):
                     rates.append(rate)
             rates = np.array(rates)
@@ -107,9 +116,34 @@ class Analyst:
             msg += "points que leur moyenne, Avec un écart type de %f selon les compétitions.\n"
             print(msg % (level, 100*rates.mean(), 100*rates.std()))
             plt.figure()
-            plt.hist(rates, label=level, range = (0, 1))
+            plt.hist(rates, label=level, bins=20, range=(0, 1))
             plt.legend()
             plt.show()
+    
+    def compute_mean_spearman_correlation_coef(self,
+                                               starting_date,
+                                               ending_date,
+                                               levels=["all"],
+                                               show_histogramms=True):
+        for level in levels:
+            coefs = list()
+            competition_list = self.database_service.get_competitions_on_period(starting_date,
+                                                                                ending_date,
+                                                                                level=level)
+            for competition_name in competition_list:
+                participations = self.database_service.get_competition_participations(competition_name)
+                coef = compute_spearman_correlation_coef(participations, self.point_type, self.value_type)
+                if not np.isnan(coef):
+                    coefs.append(coef)
+            coefs = np.array(coefs)
+            msg = "En moyenne, sur une compétition %s, le coefficient de spearman est de %f, avec"
+            msg += "un écart type de %f selon les compétitions.\n"
+            print(msg % (level, coefs.mean(), coefs.std()))
+            if show_histogramms: 
+                plt.figure()
+                plt.hist(coefs, label=level, bins=20, range=(-0.5, 1))
+                plt.legend()
+                plt.show()
         
             
         
@@ -120,12 +154,12 @@ def find_ranking_for_point_limit(values, limit):
 def find_points_for_ranking_limit(values, limit):
     return values[limit]["value"].moyenne
 
-def compute_improvement_rate(participations, point_type):
+def compute_improvement_rate(participations, point_type, value_type):
     nb_ranked = 0
     nb_improving = 0
     for participation in participations:
         try:
-            moyenne = participation["values"][point_type]["points"]
+            moyenne = participation["values"][value_type]["points"]
             points = participation["points"][point_type]
         except:
             pass
@@ -137,29 +171,54 @@ def compute_improvement_rate(participations, point_type):
         return nb_improving/nb_ranked
     return np.nan
 
+def compute_spearman_correlation_coef(participations, point_type, value_type):
+    participations = list(participations)
+    points = [p["points"][point_type] for p in participations if p["values"].get(value_type) and p["points"].get(point_type)]
+    values = [p["values"][value_type]["points"] for p in participations if p["values"].get(value_type) and p["points"].get(point_type)]
+    points_ranking = np.argsort(points)+1
+    values_ranking = np.argsort(values)+1
+    rho, pval = spearmanr(points_ranking, values_ranking)
+    return rho
+
 if __name__ == "__main__":
     load_logging_configuration()
     db_service = DatabaseService()
-    Value = ValueMaker(3, 4, "scrapping_3_4")
-    value_accessor = ValueAccessor(db_service, Value, use_scrapping_points=True)
+    # point_type = "scrapping"
+    # value_type = "scrapping"
+    # point_type = "original_calculation_initialized_2014_01_01"
+    # value_type = "3_4_original_calculation_initialized_2014_01_01"
+    point_type = "skill_based_calculation_initialized_2014_01_01"
+    value_type = "3_4_skill_based_calculation_initialized_2014_01_01"
+    Value = ValueMaker(3,
+                       4, 
+                       point_type,
+                       value_type)
+    value_accessor = ValueAccessor(db_service, Value)
     analyst = Analyst(db_service, value_accessor)
-    #analyst.show_value_and_ranking_evolution(datetime(2002, 1, 3), datetime(2021, 1, 1))
-    # analyst.show_improvement_rate_evolution(datetime(2002, 1, 3),
+    #analyst.show_value_and_ranking_evolution(datetime(2015, 1, 1), datetime(2021, 1, 1))
+    # analyst.show_improvement_rate_evolution(datetime(2015, 1, 1),
     #                                         datetime(2021, 1, 1),
-    #                                         "scrapping",
     #                                         levels=['Championnats de France',
     #                                                 'Nationale 1',
     #                                                 'Nationale 2',
     #                                                 'Nationale 3'])
-    analyst.compute_improvement_rate_evolution(datetime(2015, 1, 1),
-                                               datetime(2021, 1, 1),
-                                               "scrapping",
-                                               levels=['all',
-                                                       'Championnats de France',
-                                                       'Nationale 1',
-                                                       'Nationale 2',
-                                                       'Nationale 3',
-                                                        'Régional'])
+    # analyst.compute_improvement_rate_evolution(datetime(2015, 1, 1),
+    #                                             datetime(2021, 1, 1),
+    #                                             levels=['all',
+    #                                                     'Championnats de France',
+    #                                                     'Nationale 1',
+    #                                                     'Nationale 2',
+    #                                                     'Nationale 3',
+    #                                                     'Régional'])
+    analyst.compute_mean_spearman_correlation_coef(datetime(2015, 1, 1),
+                                                   datetime(2021, 1, 1),
+                                                   levels=['all',
+                                                           'Championnats de France',
+                                                           'Nationale 1',
+                                                           'Nationale 2',
+                                                           'Nationale 3',
+                                                           'Régional'],
+                                                   show_histogramms=False)
                                             
 """
                                             levels=['Championnats de France',

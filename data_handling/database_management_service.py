@@ -35,7 +35,7 @@ class DatabaseManagementService:
         self.db["participations"].create_index("competitionName")
         self.db["participations"].create_index("date")
         self.db["values"].create_index("date")
-        self.db["values"].create_index([("pointType",1),
+        self.db["values"].create_index([("valueType",1),
                                         ("date",1),
                                         ("competitorCategory",1),
                                         ("competitorName",1)])
@@ -69,11 +69,27 @@ class DatabaseManagementService:
     def delete_point_type(self, point_type): 
         self.db["participations"].update_many({},
                                               {"$pull":{"pointTypes":point_type},
-                                               "$unset":{"points."+point_type:"",
-                                                         "values."+point_type:""}})
+                                               "$unset":{"points."+point_type:""}})
         self.db["values"].delete_many({"pointType":point_type})
         self.db["pointComputingDetails"].delete_many({"pointType":point_type})
     
+    def delete_value_type(self, value_type): 
+        self.db["participations"].update_many({},
+                                              {"$pull":{"valueTypes":value_type},
+                                               "$unset":{"values."+value_type:""}})
+        self.db["values"].delete_many({"valueType":value_type})
+        self.db["pointComputingDetails"].delete_many({"pointType":value_type})
+    
+    def get_point_types(self):
+        return self.db["participations"].distinct("pointTypes")
+    
+    def get_value_types(self):
+        values = self.db["participations"].distinct("valueTypes")
+        for value in self.db["values"].distinct("valueTypes"):
+            if value not in values:
+                values.append(value)
+        return values
+        
     def delete_event(self, event_name):
         self.db["participations"].delete_many({"competitionName":event_name})
     

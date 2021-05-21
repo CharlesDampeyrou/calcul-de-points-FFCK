@@ -2,6 +2,7 @@ matplotlib
 beautifulsoup4==4.8.2
 requests
 numpy==1.19.3
+pandas
 pyyaml
 pytest
 lxml
@@ -9,3 +10,4 @@ pymongo
 unidecode
 aiohttp
 nest-asyncio
+scipy

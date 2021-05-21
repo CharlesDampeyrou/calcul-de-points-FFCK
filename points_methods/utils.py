@@ -44,3 +44,21 @@ def correct_negative_points(participations):
     if min_points<0:
         for participation in participations:
             participation["points"] -= min_points
+
+def calcul_points(participations, tps_base):
+    for participation in participations:
+        competitor_points = 1000*(participation["tpsScratch"]-tps_base)/tps_base
+        participation["points"] = competitor_points
+
+def calcul_tps_scratch(participations, coef_inter_cat):
+    for participation in participations:
+        coef = coef_inter_cat[participation["competitorCategory"]]
+        participation["tpsScratch"] = participation["score"]/coef
+
+def extract_points(participations):
+    points = list()
+    for participation in participations:
+        points.append({"competitorName":participation["competitorName"],
+                       "competitorCategory":participation["competitorCategory"],
+                       "points":participation["points"]})
+    return points

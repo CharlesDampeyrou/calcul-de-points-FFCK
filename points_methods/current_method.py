@@ -10,7 +10,8 @@ import logging
 import numpy as np
 
 from points_methods.utils import calcul_pen_tps_course, add_penalties, calcul_malus_phase_and_div
-from points_methods.utils import add_A_B_penality, correct_negative_points
+from points_methods.utils import add_A_B_penality, correct_negative_points, calcul_points
+from points_methods.utils import calcul_tps_scratch, extract_points
 from points_methods.exceptions import NoCompetitorException, NotEnoughCompetitorException
 from points_methods.exceptions import ImpossiblePointsComputingException
 
@@ -42,7 +43,8 @@ class PointsComputer:
                                                               result)
                 self.database_service.save_point_computing_details(point_computing_details)
     
-    def initialize(self, date, origin_points="scrapping"):
+    def initialize(self, origin_points="scrapping", **kwargs):
+        date = kwargs.get("date")
         starting_date = date-self.value_accessor.value_period
         self.database_service.copy_points(starting_date, date, self.point_type, origin_points)
 
@@ -56,7 +58,7 @@ class PointsComputer:
         
         
         ######## Calcul du temps scratch
-        self.calcul_tps_scratch(participations)
+        calcul_tps_scratch(participations, self.coef_inter_cat)
 
 
         ######## Calcul du temps de base
@@ -64,7 +66,7 @@ class PointsComputer:
 
 
         ####### Calcul du nombre de points
-        self.calcul_points(participations, tps_base)
+        calcul_points(participations, tps_base)
         add_penalties(participations, pen_manque_competiteurs)
 
 
@@ -104,11 +106,6 @@ class PointsComputer:
                     "penalitePhasedivision":penalite_phase_division}
         points = extract_points(participations)
         return points, metadata
-
-    def calcul_tps_scratch(self, participations):
-        for participation in participations:
-            coef = self.coef_inter_cat[participation["competitorCategory"]]
-            participation["tpsScratch"] = participation["score"]/coef
 
     def calcul_tps_base(self, participations):
         # Recherche des 10 meilleurs scores
@@ -162,11 +159,6 @@ class PointsComputer:
             moyenne = participation["values"][self.value_type]["points"]
             temps_fictifs.append(1000*tps_scratch/(moyenne+1000))
         return np.array(temps_fictifs)
-    
-    def calcul_points(self ,participations, tps_base):
-        for participation in participations:
-            competitor_points = 1000*(participation["tpsScratch"]-tps_base)/tps_base
-            participation["points"] = competitor_points
 
     def calcul_coef_correcteur(self, participations):
         pts_initiaux = 0
@@ -189,11 +181,3 @@ class PointsComputer:
 def multiply_by_coef(participations, COEF):
     for participation in participations:
         participation["points"]*=COEF
-
-def extract_points(participations):
-    points = list()
-    for participation in participations:
-        points.append({"competitorName":participation["competitorName"],
-                       "competitorCategory":participation["competitorCategory"],
-                       "points":participation["points"]})
-    return points

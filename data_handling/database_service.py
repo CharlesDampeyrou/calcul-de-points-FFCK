@@ -113,17 +113,71 @@ class DatabaseService:
             query["competitorCategory"] = category
         return self.db["participations"].find(query)
     
+    def get_participations_on_period(self, starting_date, ending_date, phase=None):
+        """
+        Cette fonction renvoit la liste des participations entre la starting_date (exlue)
+        et ending_date (inclue). Le paramètre optionnel phase permet de spécifier la phase
+        maximale des participations du dernier jour.
+        
+        Parameters
+        ----------
+        starting_date : datetime.datetime
+        ending_date : datetime.datetime
+        phase : str, optional
+
+        Returns
+        -------
+        list de dict (participations)
+        """
+        query = get_participations_period_query(starting_date, ending_date, phase=phase)
+        return self.db["participations"].find(query)
+    
+    
     def get_competition_list(self, competition_date, phase=None):
         query = {"date":competition_date}
         if phase is not None:
             query["simplifiedCompetitionPhase"] = phase
         return self.db["participations"].distinct("competitionName", filter=query)
     
-    def get_competition_list_on_period(self, starting_date, ending_date, level="all"):
-        query = {"date":{"$gt":starting_date, "$lte":ending_date}}
+    def get_competitions_on_period(self, starting_date, ending_date, level="all", phase=None):
+        query = get_participations_period_query(starting_date, ending_date, phase=phase)
         if level != "all":
             query["level"] = level
         return self.db["participations"].distinct("competitionName", filter=query)
+    
+    def get_competitors_on_period(self, starting_date, ending_date, phase=None, category=None):
+        """
+        Renvoit la liste des competiteurs ayant eu au moins une participation entre
+        starting_date (exclue) et ending_date (inclue). Le paramètre phase permet de
+        spécifier la dernière phase à prendre en compte pour la journée ending_date.
+        Le paramètre category permet de spécifier si l'on souhaite uniquement une catégorie.
+
+        Parameters
+        ----------
+        starting_date : datetime.datetime
+        ending_date : datetime.datetime
+        phase : None ou str ("qualif, "demi", finale"), optional
+        category : None ou str ("K1D", "K1H", ...), optionnal
+
+        Returns
+        -------
+        pymongo.command_cursor.CommandCursor
+             Itérateur sur des dictionnaires de la forme {"_id":{"competitionName":"blabla",
+                                                                 "competitionCategory":"K1H"},
+                                                          "count":nb_participations_on_period}
+
+        """
+        
+        query = get_participations_period_query(starting_date, ending_date, phase=phase)
+        if category is not None:
+            query["competitorCategory"] = category
+        pipeline = [
+            {"$match":query},
+            {"$group":{"_id":{"competitorName":"$competitorName",
+                              "competitorCategory":"$competitorCategory"},
+                      "count":{"$sum":1}}}]
+        return self.db["participations"].aggregate(pipeline)
+        
     
     def copy_points(self,
                     starting_date,
@@ -161,7 +215,7 @@ class DatabaseService:
         query = {"competitorName":competitor_name,
                  "competitorCategory":competitor_category,
                  "date":date,
-                 "valueTypes":value_type}
+                 "valueType":value_type}
         return self.db["values"].find_one(query)
     
     def add_value(self,
@@ -194,37 +248,6 @@ class DatabaseService:
                 event_name_list.append(participation["competitionName"])
         return event_name_list
     
-    def get_competitors_on_period(self, starting_date, ending_date, category):
-        """
-        cette fonction permet de récupérer les liste des compétiteurs ayant participé à une compétition entre
-        starting_date et ending_date. Si category est None, l'ensemble des compétiteurs est pris
-        en compte. Si une catégorie est spécifiée, seul les compétiteurs de la catégorie sont retournés.
-
-        Parameters
-        ----------
-        starting_date : datetime.datetime
-        ending_date : datetime.datetime
-        category : Nonetype or str in ["C1H", "C1D", "C2H", "C2D", "C2M", "K1D", "K1H"]
-
-        Returns
-        -------
-        result : List
-            Liste de dictionnaires comportant chacun les champs "competitorName" et "competitorCategory".
-            Chaque couple (nom, categorie) n'apparait qu'une unique fois.
-
-        """
-        match = {"$match":{"date":{"$gt":starting_date,
-                                        "$lte":ending_date}}}
-        if category is not None:
-            match["$match"]["competitorCategory"] = {"$eq":category}
-        group = {"$group":{"_id":{"competitorName":"$competitorName",
-                                  "competitorCategory":"$competitorCategory"}}}
-        pipeline = [match, group]
-        aggregation_result = self.db["participations"].aggregate(pipeline)
-        result = list()
-        for res in aggregation_result:
-            result.append(res["_id"])
-        return result
 
 def create_participation_dict(competitor_name,
                               competitor_category,
@@ -276,6 +299,22 @@ def create_value_dict(competitor_name,
     value["nbCompetitions"] = nb_competitions
     value["nbNationals"] = nb_nationals
     return value
+
+def get_participations_period_query(starting_date, ending_date, phase=None):
+    if phase is None:
+        query = {"date":{"$gt":starting_date, "$lte":ending_date}}
+    else:
+        if phase == "qualif":
+            authorized_phases = ["", "qualif"]
+        elif phase == "demi":
+            authorized_phases = ["", "qualif", "demi"]
+        else:
+            authorized_phases = ["", "qualif", "demi", "finale"]
+        query = {"$or":[{"date":{"$gt":starting_date,
+                                 "$lt":ending_date}},
+                        {"date":ending_date,
+                         "simplifiedCompetitionPhase":{"$in":authorized_phases}}]}
+    return query
 
 
 class ExistingItemException(Exception):

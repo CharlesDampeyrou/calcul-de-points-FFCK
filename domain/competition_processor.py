@@ -16,7 +16,7 @@ class CompetitionProcessor:
     
     def initialize_point_type(self, date, origin_points="scrapping"):
         self.logger.info("Starting the initialisation of the point type %s..." % self.point_computer.point_type)
-        self.point_computer.initialize(date, origin_points=origin_points)
+        self.point_computer.initialize(date=date, origin_points=origin_points)
         self.logger.info("Initialisation of the point type %s finished" % self.point_computer.point_type)
     
     def compute_point_type(self, starting_date):
@@ -33,5 +33,7 @@ class CompetitionProcessor:
                                                                                     phase=phase))
                 if competition_names: # La méthode n'est pas appelée si la liste est vide
                     self.point_computer.compute_and_save_points(competition_names=competition_names,
-                                                                phase=phase)
+                                                                phase=phase,
+                                                                competition_date=competition_date,
+                                                                force_value_computing=True)
                

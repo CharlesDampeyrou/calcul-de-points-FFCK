@@ -19,7 +19,6 @@ class ValueAccessor:
         self.Value = Value
         self.value_type = Value.VALUE_TYPE
         self.value_period = competition_validity_period
-        self.use_scrapping_points = use_scrapping_points #permet de créer différentes valeurs pour les points "scrapping"
     
     def compute_and_save_competition_values(self, competition_name, phase):
         self.logger.debug("Calcul et sauvegarde des valeurs pour la course %s" % competition_name)
@@ -48,8 +47,7 @@ class ValueAccessor:
         participations = filter_last_day_phases(participations,
                                                 date,
                                                 phase)
-        value = self.Value.get_value_from_participations(participations, 
-                                                         use_scrapping_points=self.use_scrapping_points)
+        value = self.Value.get_value_from_participations(participations)
         self.database_service.save_participation_value(competitor_name,
                                                        competitor_category,
                                                        competition_name,
@@ -82,8 +80,8 @@ class ValueAccessor:
         competitors = self.database_service.get_competitors_on_period(starting_date, date, category)
         result = list()
         for competitor in competitors:
-            competitor["value"] = self.get_value(competitor["competitorName"],
-                                                 competitor["competitorCategory"],
+            competitor["value"] = self.get_value(competitor["_id"]["competitorName"],
+                                                 competitor["_id"]["competitorCategory"],
                                                  date)
             result.append(competitor)
         return result
@@ -125,8 +123,7 @@ class ValueAccessor:
                                                                             date,
                                                                             self.value_period))
         
-        value = self.Value.get_value_from_participations(participations,
-                                                         use_scrapping_points=self.use_scrapping_points) 
+        value = self.Value.get_value_from_participations(participations) 
         self.database_service.add_value(competitor_name,
                                         competitor_category,
                                         date,
