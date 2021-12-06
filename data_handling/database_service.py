@@ -61,7 +61,8 @@ class DatabaseService:
                                                                 score,
                                                                 original_point,
                                                                 original_value))
-        self.db["participations"].insert_many(participation_list)
+        if len(participation_list) != 0:
+            self.db["participations"].insert_many(participation_list)
     
     def save_participation_value(self,
                                  competitor_name,

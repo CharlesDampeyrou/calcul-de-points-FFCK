@@ -35,11 +35,11 @@ class CsvDataService:
                                 first_saving=False):
         date_str = date.isoformat()[:10]
         file_name = date_str + "-"
-        competition_name = competition_name[:-13]#retrait de la date
-        if len(competition_name) > 100: #certains noms sont trop longs
-            file_name += competition_name[:100]
+        competition_name_without_date = competition_name[:-13] #retrait de la date
+        if len(competition_name_without_date) > 100: #certains noms sont trop longs
+            file_name += competition_name_without_date[:100]
         else:
-            file_name += competition_name
+            file_name += competition_name_without_date
         if competition_phase not in file_name: #Certains noms de compet ne comportent pas la manche et existent donc en double
             competition_name += " " + competition_phase
             file_name += " " + competition_phase[:min(40, len(competition_phase))]
@@ -81,7 +81,7 @@ class CsvDataService:
                 message = "Sauvegarde des compétitions dans la base de donnée : %i/%i"
                 self.logger.info(message, i, len(competition_files_paths))
             competition_infos = self.get_competition(file_path)
-            self.db_service.add_competition(competition_infos)
+            self.db_service.add_competition(*competition_infos)
     
     
     def get_competition_files_paths(self):
@@ -91,7 +91,7 @@ class CsvDataService:
             if not is_competition_file(files_paths[i]):
                 files_paths.pop(i)
                 continue
-        return files_paths
+        return [Path(self.csv_database_directory, fp) for fp in files_paths]
     
     def get_competition(self, file_path):
         with open(file_path, 'r') as file :

@@ -4,4 +4,14 @@ services:
     build:
       context: https://github.com/wodby/drupal-php.git
       dockerfile: Dockerfile
+    depends_on: mongo
     container_name: app
+    network:
+      - monreseau
+  mongo:
+    image: mongo
+    network:
+      - monreseau
+
+networks:
+  monreseau:
