@@ -7,10 +7,9 @@ Created on Sun Jan 17 17:18:15 2021
 
 import asyncio
 import nest_asyncio
+import time
 from pathlib import Path
 import requests
-import os
-import time
 import logging
 from datetime import datetime
 
@@ -18,21 +17,21 @@ from bs4 import BeautifulSoup
 import pickle
 import aiohttp
 
-from data_handling.database_service import DatabaseService
+from data_handling.csv_data_service import CsvDataService
 
 class Scrappeur(object) :
     def __init__(self) :
         self.domain = "http://www.ffcanoe.asso.fr"
         self.url = self.domain + "/eau_vive/slalom/classement/evenements/index"
-        self.years_url = [self.url + "/annee:" + str(i) for i in range(2000, 2022)]
-        #self.years_url = [self.url + "/annee:" + str(i) for i in [2020]]
+        #self.years_url = [self.url + "/annee:" + str(i) for i in range(2000, 2022)]
+        self.years_url = [self.url + "/annee:" + str(i) for i in [2001, 2021]] #for testing purpose
         self.competitions_url = list()
         self.niveaux = list()
         self.event_names = list()
         self.phases = list()
         self.logger = logging.getLogger("data_handling.Scrapper")
         self.logger.setLevel(logging.DEBUG)
-        self.database_service = DatabaseService()
+        self.csv_data_service = CsvDataService()
         self.phase_simplifier = PhaseSimplifier()
         self.final_type_simplifier = FinalTypeSimplifier()
     
@@ -73,21 +72,7 @@ class Scrappeur(object) :
         self.logger.info("Au total, " + str(len(self.phases)) + " manches.")
         return
     
-    def show_all_competitions(self) :
-        for i in range(len(self.competitions_url)) :
-            url = self.competitions_url[i]
-            event_name = self.event_names[i]
-            niv = self.niveaux[i]
-            phase = self.phases[i]
-            title, names_list, emb_list, score_list, val_list, points_list,\
-                final_type_list =     get_competition_infos(url) # à réparer
-            print(niv + " " + event_name + " " + phase + " : " + title +
-                 " Nombre de compétiteurs : " + str(len(names_list)) +
-                 " Premier compétiteur : " + str(names_list[0]) + ", embarquation : " +
-                 str(emb_list[0]) + ", score : " + str(score_list[0]) + ", valeur : " +
-                 str(val_list[0]) + ", points : " + str(points_list[0]) + "\n")
-    
-    async def save_all_competitions(self):
+    async def save_all_competitions(self, first_saving=False):
         self.logger.info("récupération et sauvegarde de toutes les infos de competition...")
         subset_size = 100
         for i in range(0, len(self.competitions_url), subset_size):
@@ -102,7 +87,7 @@ class Scrappeur(object) :
                 competition_infos = competition_infos_list[j]
                 title, names_list, emb_list, score_list, val_list, points_list, final_type_list = competition_infos
                 self.save_competition(title, event, niv, phase, names_list, emb_list,
-                                    score_list, val_list, points_list, final_type_list)
+                                    score_list, val_list, points_list, final_type_list, first_saving=first_saving)
         self.phase_simplifier.save_phases()
         self.final_type_simplifier.save_final_types()
         
@@ -155,27 +140,28 @@ class Scrappeur(object) :
     
     
     
-    def save_competition(self, titre, event_name, niveau, phase, names_list, emb_list,
-                      score_list, val_list, points_list, final_type_list) :
+    def save_competition(self, competition_name, simplified_competition_name, niveau, phase, names_list, emb_list,
+                      score_list, val_list, points_list, final_type_list, first_saving=False) :
         if len(names_list) == 0:
             return #Ne pas sauvegarder les courses sans compétiteur
-        date = Scrappeur.get_date(titre)
-        if phase not in titre: #Certains titres ne comportent pas la manche et existent donc en double
-            titre += " " + phase
+        date = Scrappeur.get_date(competition_name)
         simplified_phase = self.phase_simplifier.simplify(phase)
         simplified_final_type_list = self.final_type_simplifier.simplify_list(final_type_list)
-        self.database_service.add_competition(names_list,
-                                              emb_list,
-                                              titre,
-                                              event_name,
-                                              phase,
-                                              simplified_phase,
-                                              date,
-                                              niveau,
-                                              simplified_final_type_list,
-                                              score_list,
-                                              original_points=points_list,
-                                              original_values=val_list)
+        self.csv_data_service.save_competition_as_csv(names_list,
+                                                      emb_list,
+                                                      competition_name,
+                                                      simplified_competition_name,
+                                                      phase,
+                                                      simplified_phase,
+                                                      date,
+                                                      niveau,
+                                                      simplified_final_type_list,
+                                                      score_list,
+                                                      original_points=points_list,
+                                                      original_values=val_list,
+                                                      first_saving=first_saving)
+        
+        
     
     
     def get_date(title) :
@@ -185,14 +171,13 @@ class Scrappeur(object) :
         day = int(date_str[8:])
         return datetime(year, month, day)
     
-    def update_db(self, rep=Path(Path.home(), "database_courses_ffck")):
-        try:
-            last_year = max([int(title[:4]) for title in os.listdir(rep)])
-        except:
-            last_year = 2001
+    async def update_csv_database(self):
+        last_year = self.csv_data_service.get_last_competition_year()
+        first_saving =  (last_year == 2001)
         self.years_url = [self.url + "/annee:" + str(i) for i in range(last_year, time.localtime().tm_year+1)]
+        #self.years_url = [self.url + "/annee:" + str(i) for i in [2001, 2014, 2021]] #for testing purpose
         self.get_all_competitions_url()
-        self.save_all_files()
+        await self.save_all_competitions(first_saving=first_saving)
 
 
 async def get_competition_infos(comp_url):
@@ -201,7 +186,6 @@ async def get_competition_infos(comp_url):
             content = await response.content.read()
             soup = BeautifulSoup(content, 'lxml')
             title = soup.find("h1", {"class": "pagetitle"}).text.strip()
-            title = title.replace('/', ' sur ') #problème avec les '/' lors de la sauvegarde des fichiers
             resultats = soup.find("div", {"class": "results view"})
             final_types = resultats.find_all("h1")
             if final_types is not None :
@@ -392,7 +376,7 @@ def is_float_as_str(float_as_str):
     except ValueError:
         return False
 
-class Classe:
+class ClasseTest:
     def __init__(self):
         pass
     
@@ -410,11 +394,16 @@ class Classe:
         print(res)
         
 if __name__ =="__main__" :
+    """
     nest_asyncio.apply()
     logging.basicConfig(level=logging.INFO)
     scrappeur = Scrappeur()
     scrappeur.get_all_competitions_url()
     loop = asyncio.get_event_loop()
-    classe = Classe()
-    loop.run_until_complete(classe.get_all_pages())
-    print("Done")
+    classe_test = ClasseTest()
+    loop.run_until_complete(classe_test.get_all_pages())
+    print("Done")"""
+    nest_asyncio.apply()
+    logging.basicConfig(level=logging.INFO)
+    scrappeur = Scrappeur()
+    asyncio.run(scrappeur.update_csv_database())
