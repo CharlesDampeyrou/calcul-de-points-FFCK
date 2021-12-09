@@ -26,10 +26,20 @@ loggers:
     handlers: [ console ]
     qualname: Scrapper
     propagate: false
+  CsvDataService:
+    level: DEBUG
+    handlers: [ console ]
+    qualname: CsvDataService
+    propagate: false
   DatabaseService:
-    level: WARNING
+    level: INFO
     handlers: [ console ]
     qualname: DatabaseService
+    propagate: false
+  DatabaseManagementService:
+    level: DEBUG
+    handlers: [ console ]
+    qualname: DatabaseManagementService
     propagate: false
   ValueAccessor:
     level: WARNING

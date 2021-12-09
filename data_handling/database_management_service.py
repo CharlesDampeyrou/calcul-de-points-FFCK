@@ -6,14 +6,16 @@ Created on Tue Feb 23 18:05:23 2021
 """
 import logging
 import unidecode
+from pathlib import Path
 
 import pymongo
+import pickle
 
 from data_handling.database_service import DatabaseService
 
 class DatabaseManagementService:
     def __init__(self):
-        self.logger = logging.getLogger("DatabaseService")
+        self.logger = logging.getLogger("DatabaseManagementService")
         self.client = pymongo.MongoClient()
         self.db = self.client["ck_db"]
         self.db_service = DatabaseService()
@@ -26,6 +28,7 @@ class DatabaseManagementService:
             self.db["pointComputingDetails"].drop()
     
     def create_indexes(self):
+        self.logger.info("Mise à jour des indexes pour la base de données")
         self.db["participations"].create_index([("competitorCategory",1),
                                                 ("competitorName",1),
                                                 ("competition_name",1)])
@@ -33,7 +36,11 @@ class DatabaseManagementService:
                                                 ("competitorName",1),
                                                 ("date",1)])
         self.db["participations"].create_index("competitionName")
-        self.db["participations"].create_index("date")
+        self.db["participations"].create_index([("date",1),
+                                                ("competitionName",1)])
+        self.db["participations"].create_index([("date",1),
+                                                ("competitorCategory",1),
+                                                ("competitorName",1)])
         self.db["values"].create_index("date")
         self.db["values"].create_index([("valueType",1),
                                         ("date",1),
@@ -95,11 +102,13 @@ class DatabaseManagementService:
     
     def delete_team_events(self):
         event_name_list = self.db_service.get_all_competition_names()
+        team_event_classifier = TeamEventClassifier()
         for event_name in event_name_list:
-            if is_team_event(event_name):
-                response = input("supprimer l'évènement %s ? (o/n)\n" % event_name)
-                if response == "o":
+            if possible_team_event(event_name):
+                if team_event_classifier.is_team_event(event_name):
+                    self.logger.info("Suppression de l'évènement %s", event_name)
                     self.delete_event(event_name)
+        team_event_classifier.save()
     
     def replace_and_delete_unwanted_categories(self):
         authorized_categories = ["C1D", "C1H", "C2D", "C2H", "C2M", "K1D", "K1H"]
@@ -132,8 +141,11 @@ class DatabaseManagementService:
                 self.db["participations"].delete_one(query)
     
     def clean_database(self):
-        self.delete_team_events()
+        self.logger.info("Suppression des catégories non souhaitées")
         self.replace_and_delete_unwanted_categories()
+        self.logger.info("Suppression des courses par équipes")
+        self.delete_team_events()
+        self.logger.info("Suppression des participations enregistrées en double")
         self.delete_duplicated_participations()
         self.create_indexes()
     
@@ -146,9 +158,51 @@ class DatabaseManagementService:
         return self.db["participations"].aggregate(pipeline, allowDiskUse=True)
 
 
-def is_team_event(event_name):
+def possible_team_event(event_name):
     event_name_simplified = unidecode.unidecode(event_name).lower()
     return "equipe" in event_name_simplified or "patrouille" in event_name_simplified
+
+class TeamEventClassifier:
+    def __init__(self):
+        self.logger = logging.getLogger("TeamEventClassifier")
+        self.pkl_file_path = Path(Path.cwd(), "data_handling", "team_event_classification.pkl")
+        (self.team_events, self.not_team_events) = self.load_pickle_file()
+    
+    def load_pickle_file(self):
+        try:
+            with open(self.pkl_file_path, 'rb') as file:
+                (team_events, not_team_events) = pickle.load(file)
+        except FileNotFoundError:
+            msg = "Attention : pas de fichier trouvé pour la suppression des courses par équipes."
+            msg += " ('%s')" % str(self.pkl_file_path) 
+            self.logger.warning(msg)
+            team_events = list()
+            not_team_events = list()
+        return team_events, not_team_events
+    
+    def is_team_event(self, event_name):
+        if event_name in self.team_events:
+            return True
+        elif event_name in self.not_team_events:
+            return False
+        response = input("supprimer l'évènement %s ? (o/n)\n" % event_name)
+        if response == "o":
+            self.team_events.append(event_name)
+            return True
+        elif response == "n":
+            self.not_team_events.append(event_name)
+            return False
+        else :
+            self.logger.error("Entrée non reconnue, veuillez recommencer")
+            return self.is_team_event(event_name)
+    
+    def save(self):
+        with open(self.pkl_file_path, 'wb') as file:
+            to_save = (self.team_events,
+                       self.not_team_events)
+            pickle.dump(to_save, file)
+    
+    
 
 if __name__ == "__main__":
     db_management_service = DatabaseManagementService()

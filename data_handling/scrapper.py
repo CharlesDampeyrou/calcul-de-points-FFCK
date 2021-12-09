@@ -29,7 +29,7 @@ class Scrappeur(object) :
         self.niveaux = list()
         self.event_names = list()
         self.phases = list()
-        self.logger = logging.getLogger("data_handling.Scrapper")
+        self.logger = logging.getLogger("Scrapper")
         self.logger.setLevel(logging.DEBUG)
         self.csv_data_service = CsvDataService()
         self.phase_simplifier = PhaseSimplifier()

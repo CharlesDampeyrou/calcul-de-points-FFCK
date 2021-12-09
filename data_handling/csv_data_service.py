@@ -115,12 +115,12 @@ class CsvDataService:
             original_points = list()
             final_types = list()
             
-            valid_categories = ["K1H", "K1D", "C1H", "C1D", "C2H", "C2D", "C2M"]
+            #valid_categories = ["K1H", "K1D", "C1H", "C1D", "C2H", "C2D", "C2M"]
             for line in reader :
-                if is_number(line[2]) and is_number(line[4]) and line[1] in valid_categories : # On prend uniquement en compte les embarcations individuelles ayant un temps et des points
+                if is_number(line[2]) and is_number(line[4]):# and line[1] in valid_categories : # On prend uniquement en compte les embarcations individuelles ayant un temps et des points
                     competitor_names.append(line[0])
                     competitor_categories.append(line[1])
-                    scores.append(line[2])
+                    scores.append(float(line[2]))
                     if is_number(line[3]) : # Si le competiteur a une valaur
                         original_values.append(float(line[3]))
                     else :
@@ -177,3 +177,7 @@ def is_competition_file(file) :
 			return False
 	except ValueError :
 		return False
+
+
+if __name__ == "__main__":
+    s = CsvDataService()

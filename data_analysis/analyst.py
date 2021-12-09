@@ -195,7 +195,7 @@ if __name__ == "__main__":
                        value_type)
     value_accessor = ValueAccessor(db_service, Value)
     analyst = Analyst(db_service, value_accessor)
-    #analyst.show_value_and_ranking_evolution(datetime(2015, 1, 1), datetime(2021, 1, 1))
+    analyst.show_value_and_ranking_evolution(datetime(2015, 1, 1), datetime(2021, 12, 8))
     # analyst.show_improvement_rate_evolution(datetime(2015, 1, 1),
     #                                         datetime(2021, 1, 1),
     #                                         levels=['Championnats de France',
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     #                                                     'Nationale 3',
     #                                                     'Régional'])
     analyst.compute_mean_spearman_correlation_coef(datetime(2015, 1, 1),
-                                                   datetime(2021, 1, 1),
+                                                   datetime(2021, 12, 8),
                                                    levels=['all',
                                                            'Championnats de France',
                                                            'Nationale 1',
