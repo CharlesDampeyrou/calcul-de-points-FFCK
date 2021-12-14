@@ -1,0 +1,23 @@
+En moyenne, sur une compétition all, 37.528259 % des compétiteurs marquent de meilleurs points que leur moyenne, Avec un écart type de 14.435832 % selon les compétitions.
+
+En moyenne, sur une compétition Championnats de France, 30.755823 % des compétiteurs marquent de meilleurs points que leur moyenne, Avec un écart type de 15.102671 % selon les compétitions.
+
+En moyenne, sur une compétition Nationale 1, 15.959690 % des compétiteurs marquent de meilleurs points que leur moyenne, Avec un écart type de 6.730202 % selon les compétitions.
+
+En moyenne, sur une compétition Nationale 2, 33.659416 % des compétiteurs marquent de meilleurs points que leur moyenne, Avec un écart type de 12.153403 % selon les compétitions.
+
+En moyenne, sur une compétition Nationale 3, 46.618397 % des compétiteurs marquent de meilleurs points que leur moyenne, Avec un écart type de 12.109909 % selon les compétitions.
+
+En moyenne, sur une compétition Régional, 38.395552 % des compétiteurs marquent de meilleurs points que leur moyenne, Avec un écart type de 13.014922 % selon les compétitions.
+
+En moyenne, sur une compétition all, le coefficient de spearman est de 0.185069, avecun écart type de 0.174347 selon les compétitions.
+
+En moyenne, sur une compétition Championnats de France, le coefficient de spearman est de 0.059703, avecun écart type de 0.124197 selon les compétitions.
+
+En moyenne, sur une compétition Nationale 1, le coefficient de spearman est de 0.048450, avecun écart type de 0.108965 selon les compétitions.
+
+En moyenne, sur une compétition Nationale 2, le coefficient de spearman est de 0.071842, avecun écart type de 0.097238 selon les compétitions.
+
+En moyenne, sur une compétition Nationale 3, le coefficient de spearman est de 0.180699, avecun écart type de 0.167010 selon les compétitions.
+
+En moyenne, sur une compétition Régional, le coefficient de spearman est de 0.221917, avecun écart type de 0.173938 selon les compétitions.
