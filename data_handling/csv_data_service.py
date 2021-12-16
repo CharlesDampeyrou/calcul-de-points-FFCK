@@ -9,15 +9,13 @@ import os
 import logging
 from pathlib import Path
 import csv
-from datetime import datetime
-
-from data_handling.database_service import DatabaseService
+from datetime import datetime, timedelta
 
 class CsvDataService:
-    def __init__(self):
+    def __init__(self, database_service):
         self.logger = logging.getLogger("CsvDataService")
         self.csv_database_directory = Path(Path.cwd(), "csv_database")
-        self.db_service = DatabaseService()
+        self.db_service = database_service
         
     def save_competition_as_csv(self,
                                 competitor_names,
@@ -150,6 +148,43 @@ class CsvDataService:
         except ValueError:
             last_year = 2001
         return last_year
+    
+    def update_database(self):
+        self.logger.info("Mise à jour de la BDD à partir des fichiers CSV...")
+        db_competition_names = list(self.db_service.get_competitions_on_period(datetime(2001,1,1), datetime.now()))
+        db_competition_dates = [self.db_service.get_competition_date(comp_name) for comp_name in db_competition_names]
+        last_db_competition_date = max(db_competition_dates)
+        csv_competition_names = list()
+        csv_competition_dates = list()
+        csv_competition_paths = list()
+        for file_path in self.get_competition_files_paths():
+            competition_infos = self.get_competition(file_path)
+            csv_competition_names.append(competition_infos[2])
+            csv_competition_dates.append(competition_infos[6])
+            csv_competition_paths.append(file_path)
+        missing_competition_names = list()
+        missing_competition_dates = list()
+        # Ajout des compétitions qui sont dans les fichiers csv mais pas dans la BDD
+        for i in range(len(csv_competition_names)):
+            if (csv_competition_names[i] not in db_competition_names and
+                last_db_competition_date-csv_competition_dates[i] <= timedelta(days=15)): # Pour ne pas remettre les compétitions par équipes
+                missing_competition_names.append(csv_competition_names[i])
+                missing_competition_dates.append(csv_competition_dates[i])
+        first_missing_competition_date = min(missing_competition_dates)
+        # Suppression dans la BDD des courses ultérieures à la première course que l'on rajoute
+        for i in range(len(db_competition_names)):
+            if db_competition_dates[i] >= first_missing_competition_date:
+                self.db_service.delete_event(db_competition_names[i])
+                missing_competition_names.append(csv_competition_names[i])
+        missing_competition_paths = [csv_competition_paths[i] for i in range(len(csv_competition_paths)) if csv_competition_names[i] in missing_competition_names]
+        # Ajout de toutes les compétitions manquantes dans la BDD
+        for file_path in missing_competition_paths:
+            competition_infos = self.get_competition(file_path)
+            self.db_service.add_competition(*competition_infos)
+        self.logger.info("Mise à jour de la BDD à partir des fichiers CSV terminée")
+            
+        
+        
 
 
 class ExistingItemException(Exception):

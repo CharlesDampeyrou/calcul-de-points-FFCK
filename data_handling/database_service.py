@@ -11,10 +11,10 @@ from pymongo import UpdateOne
 
 
 class DatabaseService:
-    def __init__(self):
+    def __init__(self, prod=False):
         self.logger = logging.getLogger("DatabaseService")
         self.client = pymongo.MongoClient()
-        self.db = self.client["ck_db"]
+        self.db = self.client["ck_db_prod"] if prod else self.client["ck_db"]
     
     def competition_exists(self,
                            competition_name):
@@ -178,7 +178,9 @@ class DatabaseService:
                               "competitorCategory":"$competitorCategory"},
                       "count":{"$sum":1}}}]
         return self.db["participations"].aggregate(pipeline)
-        
+    
+    def delete_event(self, event_name):
+        self.db["participations"].delete_many({"competitionName":event_name})        
     
     def copy_points(self,
                     starting_date,
@@ -195,6 +197,10 @@ class DatabaseService:
                                           {"$push":{"pointTypes":target_point_type},
                                            "$set":{"points."+target_point_type:participation["points"][origin_point_type]}}))
         self.db["participations"].bulk_write(instructions, ordered=False)
+    
+    def get_last_points_date(self, point_type):
+        query = {"pointTypes":point_type}
+        return self.db["participations"].find_one(query, sort=[("date",-1)])["date"]
     
     def get_competition_dates(self, starting_date):
         return self.db["participations"].distinct("date",
@@ -326,7 +332,7 @@ class UnexistingParticipationException(Exception):
     pass
 
 if __name__ == "__main__":
-    database_service = DatabaseService()
+    db_service = DatabaseService()
     
     #for event_name in database_service.get_all_competition_names():
     #    (event_name)
