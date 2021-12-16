@@ -36,7 +36,7 @@ class Scrappeur(object) :
         self.csv_data_service = CsvDataService(database_service=None)
         self.phase_simplifier = PhaseSimplifier()
         self.final_type_simplifier = FinalTypeSimplifier()
-    
+
     def get_years_competitions_url(self, year_url) :
         content = requests.get(year_url).content
         soup = BeautifulSoup(content, "lxml")
@@ -58,7 +58,7 @@ class Scrappeur(object) :
                     names_list.append(event_name)
                     phases_list.append(phase)
         return names_list, niv_list, phases_list, url_list
-    
+
     def get_all_competitions_url(self) :
         self.competitions_url = list()
         self.niveaux = list()
@@ -73,7 +73,7 @@ class Scrappeur(object) :
             self.phases += phases_list
         self.logger.info("Au total, " + str(len(self.phases)) + " manches.")
         return
-    
+
     def save_all_competitions(self, first_saving=False):
         self.logger.info("récupération et sauvegarde de toutes les infos de competition...")
         for i in range(0, len(self.competitions_url)):
@@ -89,8 +89,8 @@ class Scrappeur(object) :
                                     score_list, val_list, points_list, final_type_list, first_saving=first_saving)
         self.phase_simplifier.save_phases()
         self.final_type_simplifier.save_final_types()
-        
-    
+
+
     def get_row_infos(row) :
         cases = row.find_all("td")
         for case in cases :
@@ -106,7 +106,7 @@ class Scrappeur(object) :
             elif "points" in case_class :
                 points = case.text.strip()
         return nom, score, valeur, points
-    
+
     def get_table_infos(table, final_type = None):
         categorie = "UNKNOWN"
         names_list = list()
@@ -115,7 +115,7 @@ class Scrappeur(object) :
         val_list = list()
         points_list = list()
         final_type_list = list()
-        
+
         for ligne in table.find_all("tr") :
             if len(ligne.find_all("td")) == 0 : #categorie ou première ligne
                 if ligne.get("class") is None : #première ligne du tableau
@@ -136,9 +136,9 @@ class Scrappeur(object) :
                         points_list.append(float(points))
                         final_type_list.append(final_type)
         return names_list, emb_list, score_list, val_list, points_list, final_type_list
-    
-    
-    
+
+
+
     def save_competition(self, competition_name, simplified_competition_name, niveau, phase, names_list, emb_list,
                       score_list, val_list, points_list, final_type_list, first_saving=False) :
         if len(names_list) == 0:
@@ -159,17 +159,17 @@ class Scrappeur(object) :
                                                       original_points=points_list,
                                                       original_values=val_list,
                                                       first_saving=first_saving)
-        
-        
-    
-    
+
+
+
+
     def get_date(title) :
         date_str = title[-10:]
         year = int(date_str[:4])
         month = int(date_str[5:7])
         day = int(date_str[8:])
         return datetime(year, month, day)
-    
+
     def update_csv_database(self):
         self.logger.info("Mise à jour de la base de données CSV")
         last_year = self.csv_data_service.get_last_competition_year()
@@ -223,14 +223,14 @@ class FinalTypeSimplifier:
         (self.no_type_list,
          self.final_a_list,
          self.final_b_list) = self.read_final_types_file()
-    
+
     def save_final_types(self):
         with open(self.saving_file_path, 'wb') as file:
             to_save = (self.no_type_list,
                        self.final_a_list,
                        self.final_b_list)
             pickle.dump(to_save, file)
-    
+
     def read_final_types_file(self):
         try:
             with open(self.saving_file_path, 'rb') as file:
@@ -239,19 +239,19 @@ class FinalTypeSimplifier:
                  final_b_list) = pickle.load(file)
         except FileNotFoundError:
             msg = "Attention : pas de fichier trouvé pour la simplification des types de finales."
-            msg += " ('%s')" % str(self.saving_file_path) 
+            msg += " ('%s')" % str(self.saving_file_path)
             self.logger.warning(msg)
             no_type_list = list()
             final_a_list = list()
             final_b_list = list()
         return (no_type_list, final_a_list, final_b_list)
-    
+
     def simplify_list(self, final_type_list):
         simplified_types_list = list()
         for final_type in final_type_list:
             simplified_types_list.append(self.simplify(final_type))
         return simplified_types_list
-    
+
     def simplify(self, final_type):
         if final_type is None or final_type in self.no_type_list:
             return None
@@ -262,7 +262,7 @@ class FinalTypeSimplifier:
         else:
             simplified_final_type = self.ask_for_final_type(final_type)
             self.add_final_type(final_type, simplified_final_type)
-    
+
     def ask_for_final_type(self, final_type):
         response = None
         while response not in ["n", "a", "b"]:
@@ -274,7 +274,7 @@ class FinalTypeSimplifier:
             return "finale b"
         else:
             return None
-    
+
     def add_final_type(self, final_type, simplified_final_type):
         if simplified_final_type is None:
             self.no_type_list.append(final_type)
@@ -291,7 +291,7 @@ class PhaseSimplifier:
          self.qualif_list,
          self.demi_list,
          self.final_list) = self.read_phases_file()
-    
+
     def save_phases(self):
         with open(self.saving_file_path, 'wb') as file:
             to_save = (self.no_phase_list,
@@ -299,7 +299,7 @@ class PhaseSimplifier:
                        self.demi_list,
                        self.final_list)
             pickle.dump(to_save, file)
-    
+
     def read_phases_file(self):
         try:
             with open(self.saving_file_path, 'rb') as file:
@@ -309,14 +309,14 @@ class PhaseSimplifier:
                  final_list) = pickle.load(file)
         except FileNotFoundError:
             msg = "Attention : pas de fichier trouvé pour la simplification des phases."
-            msg += " ('%s')" % str(self.saving_file_path) 
+            msg += " ('%s')" % str(self.saving_file_path)
             self.logger.warning(msg)
             no_phase_list = list()
             qualif_list = list()
             demi_list = list()
             final_list = list()
         return (no_phase_list, qualif_list, demi_list, final_list)
-    
+
     def simplify(self, phase):
         if phase in self.no_phase_list:
             return ""
@@ -330,7 +330,7 @@ class PhaseSimplifier:
             simplified_phase = self.ask_for_phase(phase)
             self.add_phase_to_list(phase, simplified_phase)
             return simplified_phase
-    
+
     def ask_for_phase(self, phase):
         response = None
         while response not in ["n", "q", "d", "f"]:
@@ -346,7 +346,7 @@ class PhaseSimplifier:
             return "demi"
         elif response == "f":
             return "finale"
-    
+
     def add_phase_to_list(self, phase, simplified_phase):
         if simplified_phase == "":
             self.no_phase_list.append(phase)
@@ -356,7 +356,7 @@ class PhaseSimplifier:
             self.demi_list.append(phase)
         elif simplified_phase == "finale":
             self.final_list.append(phase)
-    
+
     def show_all_phases(self):
         print("Voici les différentes phases :")
         print("Pas de phase :")
@@ -367,7 +367,7 @@ class PhaseSimplifier:
         print(self.demi_list, end="\n\n")
         print("Finale : ")
         print(self.final_list)
-            
+
 def is_float_as_str(float_as_str):
     try:
         float(float_as_str)
@@ -386,6 +386,6 @@ if __name__ =="__main__" :
     classe_test = ClasseTest()
     loop.run_until_complete(classe_test.get_all_pages())
     print("Done")"""
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     scrappeur = Scrappeur()
     scrappeur.update_csv_database()
