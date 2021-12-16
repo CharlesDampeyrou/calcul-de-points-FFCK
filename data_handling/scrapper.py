@@ -31,7 +31,7 @@ class Scrappeur(object) :
         self.phases = list()
         self.logger = logging.getLogger("Scrapper")
         self.logger.setLevel(logging.DEBUG)
-        self.csv_data_service = CsvDataService()
+        self.csv_data_service = CsvDataService(database_service=None)
         self.phase_simplifier = PhaseSimplifier()
         self.final_type_simplifier = FinalTypeSimplifier()
     
@@ -172,10 +172,12 @@ class Scrappeur(object) :
         return datetime(year, month, day)
     
     async def update_csv_database(self):
+        self.logger.info("Mise à jour de la base de données CSV")
         last_year = self.csv_data_service.get_last_competition_year()
         first_saving =  (last_year == 2001)
         self.years_url = [self.url + "/annee:" + str(i) for i in range(last_year, time.localtime().tm_year+1)]
         #self.years_url = [self.url + "/annee:" + str(i) for i in [2001, 2014, 2021]] #for testing purpose
+        self.logger.info("dernière année de compétition : %i" % last_year)
         self.get_all_competitions_url()
         await self.save_all_competitions(first_saving=first_saving)
 
@@ -404,6 +406,6 @@ if __name__ =="__main__" :
     loop.run_until_complete(classe_test.get_all_pages())
     print("Done")"""
     nest_asyncio.apply()
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     scrappeur = Scrappeur()
     asyncio.run(scrappeur.update_csv_database())

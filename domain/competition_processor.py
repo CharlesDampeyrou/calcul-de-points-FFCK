@@ -10,7 +10,7 @@ class CompetitionProcessor:
     def __init__(self,
                  database_service,
                  point_computer):
-        self.database_service = database_service
+        self.db_service = database_service
         self.point_computer = point_computer
         self.logger = logging.getLogger("CompetitionProcessor")
     
@@ -20,20 +20,25 @@ class CompetitionProcessor:
         self.logger.info("Initialisation of the point type %s finished" % self.point_computer.point_type)
     
     def compute_point_type(self, starting_date):
-        self.initialize_point_type(starting_date)
         self.logger.info("Starting to cumpute the %s points..." % self.point_computer.point_type)
-        competition_dates = self.database_service.get_competition_dates(starting_date)
+        competition_dates = self.db_service.get_competition_dates(starting_date)
         msg = "%i dates de compétitions sur lesquelles calculer les points, du %s au %s"
         self.logger.info(msg % (len(competition_dates),str(min(competition_dates)), str(max(competition_dates))))
         phases = ["qualif", "demi", "finale", ""]
         for competition_date in competition_dates:
             self.logger.info("Calcul des points pour les compétitions du %s." % str(competition_date))
             for phase in phases:
-                competition_names = list(self.database_service.get_competition_list(competition_date,
+                competition_names = list(self.db_service.get_competition_list(competition_date,
                                                                                     phase=phase))
                 if competition_names: # La méthode n'est pas appelée si la liste est vide
                     self.point_computer.compute_and_save_points(competition_names=competition_names,
                                                                 phase=phase,
                                                                 competition_date=competition_date,
                                                                 force_value_computing=True)
+        
+    def update_point_type(self):
+        self.logger.info("Mise à jour des points %s" % self.point_computer.point_type)
+        update_starting_date = self.db_service.get_last_points_date(self.point_computer.point_type) #TODO + arguments
+        self.compute_point_type(update_starting_date)
+        
                

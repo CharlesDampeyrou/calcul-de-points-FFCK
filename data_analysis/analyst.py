@@ -48,7 +48,7 @@ class Analyst:
                 ranking = find_ranking_for_point_limit(values, value_limit)
                 current_ranking_for_point_limit.append(ranking)
             for ranking_limit in ranking_limits:
-                points = find_points_for_ranking_limit(values, ranking_limit)
+                points = find_points_for_ranking_limit(values, ranking_limit, self.value_accessor)
                 current_points_for_ranking_limit.append(points)
             ranking_for_points_limit.append(current_ranking_for_point_limit)
             points_for_ranking_limit.append(current_points_for_ranking_limit)
@@ -112,8 +112,8 @@ class Analyst:
                 if not np.isnan(rate):
                     rates.append(rate)
             rates = np.array(rates)
-            msg = "En moyenne, sur une compétition %s, %f des compétiteurs marquent de meilleurs "
-            msg += "points que leur moyenne, Avec un écart type de %f selon les compétitions.\n"
+            msg = "En moyenne, sur une compétition %s, %f %% des compétiteurs marquent de meilleurs "
+            msg += "points que leur moyenne, Avec un écart type de %f %% selon les compétitions.\n"
             print(msg % (level, 100*rates.mean(), 100*rates.std()))
             plt.figure()
             plt.hist(rates, label=level, bins=20, range=(0, 1))
@@ -151,8 +151,13 @@ class Analyst:
 def find_ranking_for_point_limit(values, limit):
     return len([0 for value in values if value["value"]<limit])
 
-def find_points_for_ranking_limit(values, limit):
-    return values[limit]["value"].moyenne
+def find_points_for_ranking_limit(values, limit, value_accessor):
+    nb_nat_min = value_accessor.Value.NB_NAT_MIN
+    nb_comp_min = value_accessor.Value.NB_COMP_MIN
+    if values[limit]["value"].nb_nat >= nb_nat_min and values[limit]["value"].nb_comp >= nb_comp_min:
+        return values[limit]["value"].moyenne
+    else :
+        return 1000
 
 def compute_improvement_rate(participations, point_type, value_type):
     nb_ranked = 0
@@ -183,19 +188,23 @@ def compute_spearman_correlation_coef(participations, point_type, value_type):
 if __name__ == "__main__":
     load_logging_configuration()
     db_service = DatabaseService()
-    # point_type = "scrapping"
-    # value_type = "scrapping"
+    point_type = "scrapping"
+    # value_type = "3_4_scrapping" # pour show_value_and_ranking_evolution
+    value_type = "1_4_scrapping" # pour show_value_and_ranking_evolution
+    # value_type = "scrapping" # pour compute_improvement_rate_evolution et compute_mean_spearman_correlation_coef
     # point_type = "original_calculation_initialized_2014_01_01"
     # value_type = "3_4_original_calculation_initialized_2014_01_01"
-    point_type = "skill_based_calculation_initialized_2014_01_01"
-    value_type = "3_4_skill_based_calculation_initialized_2014_01_01"
-    Value = ValueMaker(3,
+    # point_type = "skill_based_calculation_initialized_2014_01_01"
+    # value_type = "3_4_skill_based_calculation_initialized_2014_01_01"
+    # point_type = "skill_based_calculation_initialized_2002_01_03"
+    # value_type = "1_4_skill_based_calculation_initialized_2002_01_03"
+    Value = ValueMaker(1,
                        4, 
                        point_type,
                        value_type)
     value_accessor = ValueAccessor(db_service, Value)
     analyst = Analyst(db_service, value_accessor)
-    analyst.show_value_and_ranking_evolution(datetime(2015, 1, 1), datetime(2021, 12, 8))
+    analyst.show_value_and_ranking_evolution(datetime(2011, 1, 13), datetime(2021, 12, 31), timestep=timedelta(days=21))
     # analyst.show_improvement_rate_evolution(datetime(2015, 1, 1),
     #                                         datetime(2021, 1, 1),
     #                                         levels=['Championnats de France',
@@ -203,22 +212,22 @@ if __name__ == "__main__":
     #                                                 'Nationale 2',
     #                                                 'Nationale 3'])
     # analyst.compute_improvement_rate_evolution(datetime(2015, 1, 1),
-    #                                             datetime(2021, 1, 1),
+    #                                             datetime(2021, 12, 8),
     #                                             levels=['all',
     #                                                     'Championnats de France',
     #                                                     'Nationale 1',
     #                                                     'Nationale 2',
     #                                                     'Nationale 3',
     #                                                     'Régional'])
-    analyst.compute_mean_spearman_correlation_coef(datetime(2015, 1, 1),
-                                                   datetime(2021, 12, 8),
-                                                   levels=['all',
-                                                           'Championnats de France',
-                                                           'Nationale 1',
-                                                           'Nationale 2',
-                                                           'Nationale 3',
-                                                           'Régional'],
-                                                   show_histogramms=False)
+    # analyst.compute_mean_spearman_correlation_coef(datetime(2015, 1, 1),
+    #                                                 datetime(2021, 12, 8),
+    #                                                 levels=['all',
+    #                                                         'Championnats de France',
+    #                                                         'Nationale 1',
+    #                                                         'Nationale 2',
+    #                                                         'Nationale 3',
+    #                                                         'Régional'],
+    #                                                 show_histogramms=False)
                                             
 """
                                             levels=['Championnats de France',
