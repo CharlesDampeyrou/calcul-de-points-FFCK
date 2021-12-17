@@ -6,12 +6,14 @@ Created on Tue Dec  7 10:08:56 2021
 """
 
 from tools.init_logging import load_logging_configuration
+from data_handling.database_service import DatabaseService
 from data_handling.csv_data_service import CsvDataService
 from data_handling.database_management_service import DatabaseManagementService
 
 if __name__ == "__main__":
     load_logging_configuration("tools/logging.yml")
-    csv_data_service = CsvDataService()
+    database_service = DatabaseService()
+    csv_data_service = CsvDataService(database_service)
     db_management_service = DatabaseManagementService()
     
     db_management_service.create_indexes() #Insertions plus rapides si les indexes sont déjà créés

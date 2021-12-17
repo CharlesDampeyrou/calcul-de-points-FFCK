@@ -170,6 +170,9 @@ class CsvDataService:
                 last_db_competition_date-csv_competition_dates[i] <= timedelta(days=15)): # Pour ne pas remettre les compétitions par équipes
                 missing_competition_names.append(csv_competition_names[i])
                 missing_competition_dates.append(csv_competition_dates[i])
+        if len(missing_competition_names) == 0:
+            self.logger.info("Mise à jour de la BDD à partir des fichiers CSV terminée")
+            return
         first_missing_competition_date = min(missing_competition_dates)
         # Suppression dans la BDD des courses ultérieures à la première course que l'on rajoute
         for i in range(len(db_competition_names)):
