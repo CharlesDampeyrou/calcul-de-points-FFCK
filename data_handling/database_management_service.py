@@ -24,7 +24,6 @@ class DatabaseManagementService:
         response = input("Delete the complete database ? (y/n)\n")
         if response == "y":
             self.db["participations"].drop()
-            self.db["values"].drop()
             self.db["pointComputingDetails"].drop()
     
     def create_indexes(self):
@@ -41,34 +40,22 @@ class DatabaseManagementService:
         self.db["participations"].create_index([("date",1),
                                                 ("competitorCategory",1),
                                                 ("competitorName",1)])
-        self.db["values"].create_index("date")
-        self.db["values"].create_index([("valueType",1),
-                                        ("date",1),
-                                        ("competitorCategory",1),
-                                        ("competitorName",1)])
     
     def create_backup(self, backup_name):
         backup_db = self.client[backup_name]
         participations = self.db["participations"].find({})
         point_computing_details = list(self.db["pointComputingDetails"].find({}))
-        values = list(self.db["values"].find({}))
         backup_db["participations"].insert_many(list(participations))
         if len(point_computing_details) != 0:
             backup_db["pointComputingDetails"].insert_many(point_computing_details)
-        if len(values) != 0:
-            backup_db["values"].insert_many(values)
-    
+            
     def restore_db(self, backup_name):
         self.db["participations"].drop()
-        self.db["values"].drop()
         self.db["pointComputingDetails"].drop()
         backup_db = self.client[backup_name]
         participations = backup_db["participations"].find({})
-        values = list(backup_db["values"].find({}))
         point_computing_details = list(backup_db["pointComputingDetails"].find({}))
         self.db["participations"].insert_many(list(participations))
-        if len(values) != 0:
-            self.db["values"].insert_many(values)
         if len(point_computing_details) != 0:
             self.db["pointComputingDetails"].insert_many(point_computing_details)
         self.create_indexes()
@@ -77,14 +64,12 @@ class DatabaseManagementService:
         self.db["participations"].update_many({},
                                               {"$pull":{"pointTypes":point_type},
                                                "$unset":{"points."+point_type:""}})
-        self.db["values"].delete_many({"pointType":point_type})
         self.db["pointComputingDetails"].delete_many({"pointType":point_type})
     
     def delete_value_type(self, value_type): 
         self.db["participations"].update_many({},
                                               {"$pull":{"valueTypes":value_type},
                                                "$unset":{"values."+value_type:""}})
-        self.db["values"].delete_many({"valueType":value_type})
         self.db["pointComputingDetails"].delete_many({"pointType":value_type})
     
     def get_point_types(self):
@@ -92,9 +77,6 @@ class DatabaseManagementService:
     
     def get_value_types(self):
         values = self.db["participations"].distinct("valueTypes")
-        for value in self.db["values"].distinct("valueTypes"):
-            if value not in values:
-                values.append(value)
         return values
         
     def delete_event(self, event_name):
@@ -116,10 +98,7 @@ class DatabaseManagementService:
             catM = cat + "M"
             self.db["participations"].update_many({"competitorCategory":catM},
                                                   {"$set":{"competitorCategory":cat}})
-            self.db["values"].update_many({"competitorCategory":catM},
-                                          {"$set":{"competitorCategory":cat}})
         self.db["participations"].delete_many({"competitorCategory":{"$nin":authorized_categories}})
-        self.db["values"].delete_many({"competitorCategory":{"$nin":authorized_categories}})
     
     def delete_duplicated_participations(self):
         pipeline = [{"$group":{"_id":{"competitorName":"$competitorName",
