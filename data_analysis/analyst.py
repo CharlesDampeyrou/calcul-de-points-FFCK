@@ -40,7 +40,7 @@ class Analyst:
             current_ranking_for_point_limit = list()
             current_points_for_ranking_limit = list()
             values = self.value_accessor.get_all_values(current_date)
-            values.sort(key=lambda x:x["value"])
+            # values.sort(key=lambda x:x["value"]) #valeurs déjà triées
             for point_limit in point_limits:
                 nb_nat = self.value_accessor.Value.NB_NAT_MIN
                 nb_comp = self.value_accessor.Value.NB_COMP_MIN
@@ -204,7 +204,7 @@ if __name__ == "__main__":
                        value_type)
     value_accessor = ValueAccessor(db_service, Value)
     analyst = Analyst(db_service, value_accessor)
-    analyst.show_value_and_ranking_evolution(datetime(2011, 1, 13), datetime(2021, 12, 31), timestep=timedelta(days=21))
+    analyst.show_value_and_ranking_evolution(datetime(2014, 1, 1), datetime(2021, 12, 31), timestep=timedelta(days=21))
     # analyst.show_improvement_rate_evolution(datetime(2015, 1, 1),
     #                                         datetime(2021, 1, 1),
     #                                         levels=['Championnats de France',

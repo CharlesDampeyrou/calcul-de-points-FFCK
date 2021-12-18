@@ -5,6 +5,9 @@ Created on Sun Jan 17 12:42:04 2021
 @author: charl
 """
 import logging
+from datetime import timedelta, datetime
+import time
+from bson.son import SON
 
 import pymongo
 from pymongo import UpdateOne
@@ -97,6 +100,73 @@ class DatabaseService:
         assert("competitionName" in point_computing_details)
         self.db["pointComputingDetails"].insert_one(point_computing_details)
     
+    def get_ranking(self,
+                    date,
+                    point_type,
+                    category,
+                    nb_nat_min,
+                    nb_comp_min,
+                    value_period=timedelta(days=365)):
+        """
+        Fonction renvoyant la liste classée des athlètes à la date souhaitée, avec la moyenne,
+        le nombre de courses dans la moyenne et le nombre de courses nationnales dans la
+        moyenne
+
+        Parameters
+        ----------
+        date : datetime.datetime
+            date de calcul du classement
+        point_type : STR
+            type de points pris en comptes dans la valeur
+        category : "all", "K1D", "K1H", etc. optionnal
+        nb_nat_min : INT, optional
+            nombre de courses nationales minimum dans la valeur. The default is 3.
+        nb_comp_min : INT, optional
+            nombre de courses dans la valeur. The default is 4.
+        value_period : datetime.timedelta, optional
+            durée de prise en compte des compétitions pour la valeur. The default is timedelta(days=365).
+
+        Returns
+        -------
+        pymongo.command_cursor.CommandCursor
+             Itérateur sur des dictionnaires de la forme {"_id":{"competitionName":"...",
+                                                                 "competitionCategory":"..."},
+                                                          "nbNat":nombre de compétitions nationales
+                                                              dans la moyenne,
+                                                          "nbComp":nombre de compétitions dans la
+                                                              moyenne,
+                                                          "moy":moyenne}
+        """
+        query = dict()
+        if category != "all":
+            query["competitorCategory"] = category
+        pipeline = create_value_pipeline(query, date, value_period, point_type, nb_nat_min, nb_comp_min)
+        # Classement des compétiteurs
+        pipeline.append({"$sort":SON([("nbComp", -1), ("nbNat", -1), ("moy", 1)])})
+        return self.db["participations"].aggregate(pipeline)
+    
+
+    def get_value(self, 
+                  competitor_name,
+                  competitor_category,
+                  date,
+                  point_type,
+                  nb_nat_min,
+                  nb_comp_min,
+                  value_period=timedelta(days=365)):
+        query = {"competitorName":competitor_name,
+                 "competitorCategory":competitor_category}
+        pipeline = create_value_pipeline(query, date, value_period, point_type, nb_nat_min, nb_comp_min)
+        res = list(self.db["participations"].aggregate(pipeline))
+        if len(res) != 0:
+            return res[0]
+        return {"_id":{"competitorName":competitor_name,
+                       "competitorCategory":competitor_category},
+                "nbNat":0,
+                "nbComp":0,
+                "moy":1000}
+        
+    
     def get_last_participations(self,
                                 competitor_name,
                                 competitor_category,
@@ -146,7 +216,7 @@ class DatabaseService:
             query["level"] = level
         return self.db["participations"].distinct("competitionName", filter=query)
     
-    def get_competitors_on_period(self, starting_date, ending_date, phase=None, category=None):
+    def get_competitors_on_period(self, starting_date, ending_date, phase=None, category="all"):
         """
         Renvoit la liste des competiteurs ayant eu au moins une participation entre
         starting_date (exclue) et ending_date (inclue). Le paramètre phase permet de
@@ -158,7 +228,7 @@ class DatabaseService:
         starting_date : datetime.datetime
         ending_date : datetime.datetime
         phase : None ou str ("qualif, "demi", finale"), optional
-        category : None ou str ("K1D", "K1H", ...), optionnal
+        category : str ("K1D", "K1H", ... ou "all"), optionnal
 
         Returns
         -------
@@ -170,7 +240,7 @@ class DatabaseService:
         """
         
         query = get_participations_period_query(starting_date, ending_date, phase=phase)
-        if category is not None:
+        if category != "all":
             query["competitorCategory"] = category
         pipeline = [
             {"$match":query},
@@ -213,39 +283,6 @@ class DatabaseService:
         participation = self.db["participations"].find_one({"competitionName":competition_name})
         return participation["simplifiedCompetitionPhase"] == simplified_phase
 
-
-    def get_value(self,
-                  competitor_name,
-                  competitor_category,
-                  date,
-                  value_type):
-        query = {"competitorName":competitor_name,
-                 "competitorCategory":competitor_category,
-                 "date":date,
-                 "valueType":value_type}
-        return self.db["values"].find_one(query)
-    
-    def add_value(self,
-                  competitor_name,
-                  competitor_category,
-                  date,
-                  value_type,
-                  value_points,
-                  nb_competitions,
-                  nb_nationals):
-        value = self.get_value(competitor_name, competitor_category, date, value_type)
-        if value is None:
-            value_dic = create_value_dict(competitor_name,
-                                          competitor_category,
-                                          date,
-                                          value_type,
-                                          value_points,
-                                          nb_competitions,
-                                          nb_nationals)
-            self.db["values"].insert_one(value_dic)
-        else:
-            msg = "La valeur de type %s de %s en %s au %s existe déja."
-            raise ExistingItemException(msg % (value_type, competitor_name, competitor_category, str(date)))
     
     def get_all_competition_names(self):
         all_participations = self.db["participations"].find({})
@@ -254,7 +291,61 @@ class DatabaseService:
             if participation["competitionName"] not in event_name_list:
                 event_name_list.append(participation["competitionName"])
         return event_name_list
-    
+
+def create_value_pipeline(query,
+                          date,
+                          value_period, 
+                          point_type, 
+                          nb_nat_min, 
+                          nb_comp_min):
+    query["date"] = {"$gt":date-value_period, 
+                     "$lte":date}
+    pipeline = list()
+    # Séléction des participations aux dates souhaitéeset dans la bonne catégorie
+    pipeline.append({"$match":query})
+    # Tri des participations selon le points
+    pipeline.append({"$sort":{"points."+point_type:1}})
+    # Création de la liste des compétitions nationales et régionales pour les athlètes
+    pipeline.append({'$group':{
+        '_id':{
+            'competitorName': '$competitorName', 
+            'competitorCategory': '$competitorCategory'}, 
+        'natPoints': {'$push': {'$cond': [
+                    {'$in':['$level',['Nationale 3', 'Nationale 2', 'Nationale 1', 'Championnats de France']]},
+                    '$points.'+point_type,
+                    '$$REMOVE']}}, 
+        'regPoints': {'$push': {'$cond': [
+                    {'$eq': ['$level', 'Régional']},
+                    '$points.'+point_type,
+                    '$$REMOVE']}}}})
+    # Separation des 3 meilleures compétitions nat et des autre compétitions
+    pipeline.append({'$set': {
+        'natList': {'$slice': ['$natPoints', nb_nat_min]}, 
+        'compList': {'$concatArrays': [
+                {'$slice': ['$natPoints', nb_nat_min, nb_comp_min]},
+                '$regPoints']}}})
+    # Tri des autres compétitions sur les 3 stages suivants
+    pipeline.append({'$unwind': {
+        'path': '$compList', 
+        'preserveNullAndEmptyArrays': True}})
+    pipeline.append({"$sort":{"compList":1}})
+    pipeline.append({'$group': {
+        '_id': '$_id', 
+        'natList': {'$first': '$natList'}, 
+        'compList': {'$push': '$compList'}}})
+    # Comptage du nombre de nationales et création de la liste des courses comptants dans la moyenne
+    pipeline.append({'$set': {
+        'nbNat': {'$size': '$natList'},
+        'moyList': {'$slice': [{'$concatArrays': ['$natList', '$compList']}, nb_comp_min]}}})
+    # Création de la moyenne et comptage du nonmbre de courses dans la moyenne
+    pipeline.append({'$set': {
+        'nbComp': {'$size': '$moyList'}, 
+        'moy': {'$avg': '$moyList'}}})
+    pipeline.append({'$project':{
+        'nbComp':1,
+        'nbNat':1,
+        'moy':1}})
+    return pipeline
 
 def create_participation_dict(competitor_name,
                               competitor_category,
@@ -290,22 +381,6 @@ def create_participation_dict(competitor_name,
                                                 "nbNationals":-1}}
     return participation
 
-def create_value_dict(competitor_name,
-                      competitor_category,
-                      date,
-                      value_type,
-                      value_points,
-                      nb_competitions,
-                      nb_nationals):
-    value = dict()
-    value["competitorName"] = competitor_name
-    value["competitorCategory"] = competitor_category
-    value["date"] = date
-    value["valueType"] = value_type
-    value["valuePoints"] = value_points
-    value["nbCompetitions"] = nb_competitions
-    value["nbNationals"] = nb_nationals
-    return value
 
 def get_participations_period_query(starting_date, ending_date, phase=None):
     if phase is None:
@@ -337,4 +412,17 @@ if __name__ == "__main__":
     #for event_name in database_service.get_all_competition_names():
     #    (event_name)
     #database_service.reset_db()
-    pass
+    t0 = time.time()
+    # res = list(db_service.get_ranking(datetime(2021,12,18),
+    #                                   "scrapping",
+    #                                   "all",
+    #                                   3,
+    #                                   4))
+    
+    res = db_service.get_value("Charles Dampeyrou",
+                               "C1H",
+                               datetime(2021,12,18),
+                               "scrapping",
+                               3,
+                               4)
+    print(time.time()-t0)

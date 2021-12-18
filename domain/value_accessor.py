@@ -56,7 +56,7 @@ class ValueAccessor:
                                                        value.nb_comp,
                                                        value.nb_nat)
         
-    def get_all_values(self, date, category=None):
+    def get_all_values(self, date, category="all"):
         """
         Cette fonction permet de récupérer les valeurs à la date souhaitée de tous les compétiteurs
         ayant eu au moins une course dans la période concernée par la valeur. Si les valeurs ne sont pas
@@ -76,15 +76,18 @@ class ValueAccessor:
             l'objet stocké sous la clé "value" est de type Valeur.
 
         """
-        starting_date = date - self.value_period
-        competitors = self.database_service.get_competitors_on_period(starting_date, date, category)
-        result = list()
-        for competitor in competitors:
-            competitor["value"] = self.get_value(competitor["_id"]["competitorName"],
-                                                 competitor["_id"]["competitorCategory"],
-                                                 date)
-            result.append(competitor)
-        return result
+        ranking = self.database_service.get_ranking(date,
+                                                        self.Value.POINT_TYPE,
+                                                        category,
+                                                        self.Value.NB_NAT_MIN,
+                                                        self.Value.NB_COMP_MIN,
+                                                        value_period = self.value_period)
+        values = list()
+        for d in ranking:
+            values.append({"competitorName":d["_id"]["competitorName"],
+                           "competitorCategory":d["_id"]["competitorCategory"],
+                           "value":self.get_value_from_dic(d)})
+        return values
         
         
     
@@ -115,29 +118,16 @@ class ValueAccessor:
         value_as_dic = self.database_service.get_value(competitor_name,
                                                        competitor_category,
                                                        date,
-                                                       self.value_type)
-        if value_as_dic is not None:
-            return self.get_value_from_dic(value_as_dic)
-        participations = list(self.database_service.get_last_participations(competitor_name,
-                                                                            competitor_category,
-                                                                            date,
-                                                                            self.value_period))
-        
-        value = self.Value.get_value_from_participations(participations) 
-        self.database_service.add_value(competitor_name,
-                                        competitor_category,
-                                        date,
-                                        self.value_type,
-                                        value.moyenne,
-                                        value.nb_comp,
-                                        value.nb_nat)
-        return value
+                                                       self.Value.POINT_TYPE,
+                                                       self.Value.NB_NAT_MIN,
+                                                       self.Value.NB_COMP_MIN)
+        return self.get_value_from_dic(value_as_dic)
     
     
     def get_value_from_dic(self, value_as_dic):
-        moyenne = value_as_dic["valuePoints"]
-        nb_competitions = value_as_dic["nbCompetitions"]
-        nb_nationals = value_as_dic["nbNationals"]
+        moyenne = value_as_dic["moy"]
+        nb_competitions = value_as_dic["nbComp"]
+        nb_nationals = value_as_dic["nbNat"]
         return self.Value(moyenne, nb_nationals, nb_competitions)
     
     
