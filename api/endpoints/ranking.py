@@ -13,7 +13,7 @@ from flask_restplus import Resource
 
 from api.restplus import api
 from api.serializer import value
-from data_handling.database_service import DatabaseService
+from data_handling.database_service import get_db_service
 
 ns = api.namespace('ranking', description='Classement des compétiteurs')
 
@@ -25,7 +25,7 @@ class Ranking(Resource):
         """
         Returns the list of all models.
         """
-        db_service = DatabaseService()
+        db_service = get_db_service()
         data = request.args
         date = datetime.fromisoformat(data.get("date"))
         point_type = data.get("pointType")

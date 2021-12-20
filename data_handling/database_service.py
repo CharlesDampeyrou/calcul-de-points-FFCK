@@ -13,6 +13,9 @@ import pymongo
 from pymongo import UpdateOne
 
 
+def get_db_service():
+    return DatabaseService()
+
 class DatabaseService:
     def __init__(self, prod=False):
         self.logger = logging.getLogger("DatabaseService")
