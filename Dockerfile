@@ -1,11 +1,18 @@
-FROM python:slim
+FROM python:3.9-slim
 
+# Set the working directory to /app
 WORKDIR /app
 
-COPY . /app
+# Copy the current directory contents into the container at /app
+ADD . /app
 
+# Install the dependencies
 RUN pip install -r requirements.txt
 
-EXPOSE 27017
+# Create a uwsgi log directory and files
+RUN mkdir /var/log/uwsgi
+RUN touch /var/log/uwsgi/uwsgi_access.log
+RUN touch /var/log/uwsgi/uwsgi_error.log
 
-CMD ["python", "main.py"]
+# run the command to start uWSGI
+CMD ["uwsgi", "app.ini"]
