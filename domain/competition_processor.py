@@ -5,6 +5,7 @@ Created on Fri Feb 12 15:10:48 2021
 @author: charl
 """
 import logging
+from datetime import datetime
 
 class CompetitionProcessor:
     def __init__(self,
@@ -36,9 +37,12 @@ class CompetitionProcessor:
                                                                 competition_date=competition_date,
                                                                 force_value_computing=True)
         
-    def update_point_type(self):
+    def update_point_type(self, default_starting_date=datetime(2014,1,1)):
         self.logger.info("Mise à jour des points %s" % self.point_computer.point_type)
-        update_starting_date = self.db_service.get_last_points_date(self.point_computer.point_type) #TODO + arguments
+        update_starting_date = self.db_service.get_last_points_date(self.point_computer.point_type)
+        if update_starting_date is None:
+            update_starting_date = default_starting_date
+            self.initialize_point_type(update_starting_date)
         self.compute_point_type(update_starting_date)
         
                

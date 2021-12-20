@@ -7,6 +7,7 @@ Created on Tue Dec 14 23:11:02 2021
 
 from datetime import timedelta
 from pathlib import Path
+import os
 
 from tools.init_logging import load_logging_configuration
 from data_handling.database_service import DatabaseService
@@ -20,17 +21,18 @@ from points_methods.skill_based_method import PointsComputer
 if __name__ == "__main__":
     logging_file = Path(Path.cwd(),"tools", "logging.yml")
     load_logging_configuration(logging_file)
-    # point_type = "skill_based"
-    # value_type = "3_4_skill_based"
-    
-    point_type = "skill_based_calculation_initialized_2014_01_01"
-    value_type = "3_4_skill_based_calculation_initialized_2014_01_01"
+    point_type = "skill_based"
+    value_type = "3_4_skill_based"
+    try:
+        production = os.environ["PRODUCTION"]
+    except:
+        production = False
 
     nb_nat_min = 3
     nb_comp_min = 4
     competition_validity_period = timedelta(days=365)
     
-    database_service = DatabaseService(prod=False)
+    database_service = DatabaseService(prod=production)
     
     csv_data_service = CsvDataService(database_service)
     

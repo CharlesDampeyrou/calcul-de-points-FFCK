@@ -19,18 +19,18 @@ from points_methods.skill_based_method import PointsComputer as SBPointsComputer
 if __name__ == "__main__":
     logging_file = Path(Path.cwd(),"tools", "logging.yml")
     load_logging_configuration(logging_file)
-    # point_type = "skill_based_calculation_initialized_2014_01_01"
-    # value_type = "3_4_skill_based_calculation_initialized_2014_01_01"
-    point_type = "skill_based_calculation_initialized_2002_01_03"
-    value_type = "1_4_skill_based_calculation_initialized_2002_01_03"
+    point_type = "skill_based_calculation_initialized_2014_01_01"
+    value_type = "3_4_skill_based_calculation_initialized_2014_01_01"
+    # point_type = "skill_based_calculation_initialized_2002_01_03"
+    # value_type = "1_4_skill_based_calculation_initialized_2002_01_03"
     PointsComputer = SBPointsComputer
     # point_type = "original_calculation_initialized_2014_01_01"
     # value_type = "3_4_original_calculation_initialized_2014_01_01"
     #PointsComputer = CMPointsComputer
-    nb_nat_min = 1
+    nb_nat_min = 3
     nb_comp_min = 4
     competition_validity_period = timedelta(days=365)
-    starting_date = datetime(2002, 1, 3) 
+    starting_date = datetime(2014, 1, 1) 
     
     database_service = DatabaseService()
     Value = ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type)
