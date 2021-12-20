@@ -31,7 +31,7 @@ class Ranking(Resource):
         category = data.get("category")
         nb_nat_min = int(data.get("nbNatMin"))
         nb_comp_min = int(data.get("nbCompMin"))
-        return (None, 200)
+        #return (None, 200)
         return (list(db_service.get_ranking(date,
                                         point_type,
                                         category,

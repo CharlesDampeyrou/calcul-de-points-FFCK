@@ -17,8 +17,8 @@ from api.endpoints.ranking import ns as ranking_namespace
 
 app = Flask("apiClassementCanoeKayak")
 
-#app.config["db_service"] = DatabaseService()
-app.config["db_service"] = None
+app.config["db_service"] = DatabaseService()
+#app.config["db_service"] = None
 
 blueprint = Blueprint('api', __name__)
 api.init_app(blueprint)
