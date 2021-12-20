@@ -1,9 +1,9 @@
-FROM python:3.9-slim
+FROM python:3.9
 
 # Set the working directory to /app
 WORKDIR /app
 
-RUN apt-get install gcc
+#RUN apk update && apk install gcc
 
 # Copy the current directory contents into the container at /app
 ADD . /app
