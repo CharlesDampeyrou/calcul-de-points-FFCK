@@ -4,6 +4,7 @@ Created on Sun Jan 17 12:42:04 2021
 
 @author: charl
 """
+import os
 import logging
 from datetime import timedelta, datetime
 import time
@@ -19,7 +20,10 @@ def get_db_service():
 class DatabaseService:
     def __init__(self, prod=False):
         self.logger = logging.getLogger("DatabaseService")
-        self.client = pymongo.MongoClient(connect=False)
+        if os.environ.get("RUNNING_IN_DOCKER"):
+            self.client = pymongo.MongoClient("mongodb://MongoDB:27017", connect=False)
+        else:
+            self.client = pymongo.MongoClient(connect=False)
         self.db = self.client["ck_db_prod"] if prod else self.client["ck_db"]
 
     def competition_exists(self,

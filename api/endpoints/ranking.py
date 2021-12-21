@@ -17,7 +17,7 @@ from data_handling.database_service import get_db_service
 
 ns = api.namespace('ranking', description='Classement des compétiteurs')
 
-@ns.route('test')
+@ns.route('/test')
 class Test(Resource):
     def get(self):
         return "Hello world !"
