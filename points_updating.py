@@ -11,6 +11,7 @@ import os
 
 from tools.init_logging import load_logging_configuration
 from data_handling.database_service import DatabaseService
+from data_handling.database_management_service import DatabaseManagementService
 from data_handling.csv_data_service import CsvDataService
 from domain.value import ValueMaker
 from domain.competition_processor import CompetitionProcessor
@@ -30,10 +31,13 @@ if __name__ == "__main__":
     competition_validity_period = timedelta(days=365)
 
     database_service = DatabaseService(prod=production)
+    db_management_service = DatabaseManagementService(prod=production)
 
     csv_data_service = CsvDataService(database_service)
 
+    db_management_service.create_indexes()
     csv_data_service.update_database()
+    db_management_service.clean_database()
 
     Value = ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type)
     value_accessor = ValueAccessor(database_service, Value, competition_validity_period=competition_validity_period)
