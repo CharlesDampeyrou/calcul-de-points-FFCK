@@ -16,6 +16,9 @@ RUN mkdir /var/log/uwsgi
 RUN touch /var/log/uwsgi/uwsgi_access.log
 RUN touch /var/log/uwsgi/uwsgi_error.log
 
-# run the command to start uWSGI
+# Entering the entrypoint
+RUN chmod +x entrypoint.sh
 CMD ["./entrypoint.sh"]
+
+# run the command to start uWSGI
 #CMD ["uwsgi", "app.ini"]
