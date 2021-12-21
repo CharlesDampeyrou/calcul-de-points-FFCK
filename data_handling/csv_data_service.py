@@ -92,7 +92,7 @@ class CsvDataService:
         return [Path(self.csv_database_directory, fp) for fp in files_paths]
 
     def get_competition(self, file_path):
-        with open(file_path, 'r') as file :
+        with open(file_path, 'r', encoding="latin1") as file :
             reader = csv.reader(file, dialect="unix")
             first_line = next(reader)
             (competition_name,
