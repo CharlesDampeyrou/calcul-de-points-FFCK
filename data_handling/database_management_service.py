@@ -4,6 +4,7 @@ Created on Tue Feb 23 18:05:23 2021
 
 @author: charl
 """
+import os
 import logging
 import unidecode
 from pathlib import Path
