@@ -17,4 +17,5 @@ RUN touch /var/log/uwsgi/uwsgi_access.log
 RUN touch /var/log/uwsgi/uwsgi_error.log
 
 # run the command to start uWSGI
-CMD ["uwsgi", "app.ini"]
+CMD ["./entrypoint.sh"]
+#CMD ["uwsgi", "app.ini"]
