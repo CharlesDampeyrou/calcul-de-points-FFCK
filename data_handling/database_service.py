@@ -277,7 +277,10 @@ class DatabaseService:
 
     def get_last_points_date(self, point_type):
         query = {"pointTypes":point_type}
-        return self.db["participations"].find_one(query, sort=[("date",-1)])["date"]
+        last_participation = self.db["participations"].find_one(query, sort=[("date",-1)])
+        if last_participation is not None:
+            return last_participation["date"]
+        return None
 
     def get_competition_dates(self, starting_date):
         return self.db["participations"].distinct("date",
