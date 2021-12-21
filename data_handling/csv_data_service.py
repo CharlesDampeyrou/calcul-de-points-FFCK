@@ -16,7 +16,7 @@ class CsvDataService:
         self.logger = logging.getLogger("CsvDataService")
         self.csv_database_directory = Path(Path.cwd(), "csv_database")
         self.db_service = database_service
-        
+
     def save_competition_as_csv(self,
                                 competitor_names,
                                 competitor_categories,
@@ -41,7 +41,7 @@ class CsvDataService:
         if competition_phase not in file_name: #Certains noms de compet ne comportent pas la manche et existent donc en double
             competition_name += " " + competition_phase
             file_name += " " + competition_phase[:min(40, len(competition_phase))]
-        
+
         file_name += ".csv"
         file_name = replace_chars(file_name, ["/", "\"", "\\", "|", "?"], "-")
         file_path = Path(self.csv_database_directory, file_name)
@@ -71,7 +71,7 @@ class CsvDataService:
                                  original_values[i] if original_values else "",
                                  original_points[i] if original_points else "",
                                  final_types[i]])
-    
+
     def save_csv_files_in_database(self):
         competition_files_paths = self.get_competition_files_paths()
         for (i, file_path) in enumerate(competition_files_paths):
@@ -80,8 +80,8 @@ class CsvDataService:
                 self.logger.info(message, i, len(competition_files_paths))
             competition_infos = self.get_competition(file_path)
             self.db_service.add_competition(*competition_infos)
-    
-    
+
+
     def get_competition_files_paths(self):
         files_paths = os.listdir(self.csv_database_directory)
         files_paths.sort()
@@ -90,7 +90,7 @@ class CsvDataService:
                 files_paths.pop(i)
                 continue
         return [Path(self.csv_database_directory, fp) for fp in files_paths]
-    
+
     def get_competition(self, file_path):
         with open(file_path, 'r') as file :
             reader = csv.reader(file, dialect="unix")
@@ -105,14 +105,14 @@ class CsvDataService:
             date = datetime.fromisoformat(date_str)
 
             next(reader) # Deuxième ligne inutile
-            
+
             competitor_names = list()
             competitor_categories = list()
             scores = list()
             original_values = list()
             original_points = list()
             final_types = list()
-            
+
             #valid_categories = ["K1H", "K1D", "C1H", "C1D", "C2H", "C2D", "C2M"]
             for line in reader :
                 if is_number(line[2]) and is_number(line[4]):# and line[1] in valid_categories : # On prend uniquement en compte les embarcations individuelles ayant un temps et des points
@@ -140,19 +140,25 @@ class CsvDataService:
                     scores,
                     original_points,
                     original_values)
-    
-    
+
+
     def get_last_competition_year(self):
         try:
             last_year = max([int(file_name[:4]) for file_name in os.listdir(self.csv_database_directory)])
         except ValueError:
             last_year = 2001
         return last_year
-    
+
     def update_database(self):
         self.logger.info("Mise à jour de la BDD à partir des fichiers CSV...")
         db_competition_names = list(self.db_service.get_competitions_on_period(datetime(2001,1,1), datetime.now()))
         db_competition_dates = [self.db_service.get_competition_date(comp_name) for comp_name in db_competition_names]
+        if len(db_competition_names) == 0:
+            msg = "Aucune compétition dans la base de données Mongo, création "
+            msg += "de l'entièreté de la DBB."
+            self.logger.info(msg)
+            self.save_csv_files_in_database()
+            return
         last_db_competition_date = max(db_competition_dates)
         csv_competition_names = list()
         csv_competition_dates = list()
@@ -185,9 +191,9 @@ class CsvDataService:
             competition_infos = self.get_competition(file_path)
             self.db_service.add_competition(*competition_infos)
         self.logger.info("Mise à jour de la BDD à partir des fichiers CSV terminée")
-            
-        
-        
+
+
+
 
 
 class ExistingItemException(Exception):
@@ -205,7 +211,7 @@ def is_number(s) :
 		return True
 	except ValueError :
 		return False
-    
+
 def is_competition_file(file) :
 	try :
 		datetime.fromisoformat(file[:10])
