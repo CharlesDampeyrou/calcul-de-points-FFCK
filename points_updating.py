@@ -23,7 +23,7 @@ if __name__ == "__main__":
     load_logging_configuration(logging_file)
     point_type = "skill_based"
     value_type = "3_4_skill_based"
-    production = True if os.environ.get["PRODUCTION"] else False
+    production = True if os.environ.get("PRODUCTION") else False
 
     nb_nat_min = 3
     nb_comp_min = 4
