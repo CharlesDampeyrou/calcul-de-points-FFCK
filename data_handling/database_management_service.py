@@ -15,12 +15,13 @@ import pickle
 from data_handling.database_service import DatabaseService
 
 class DatabaseManagementService:
-    def __init__(self, prod=False):
+    def __init__(self):
         self.logger = logging.getLogger("DatabaseManagementService")
         if os.environ.get("RUNNING_IN_DOCKER"):
             self.client = pymongo.MongoClient("mongodb://MongoDB:27017", connect=False)
         else:
             self.client = pymongo.MongoClient(connect=False)
+        prod = True if os.environ.get("PRODUCTION") else False
         self.db = self.client["ck_db_prod"] if prod else self.client["ck_db"]
         self.db_service = DatabaseService(prod=prod)
 

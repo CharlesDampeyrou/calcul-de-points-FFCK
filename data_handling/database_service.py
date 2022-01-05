@@ -14,16 +14,15 @@ import pymongo
 from pymongo import UpdateOne
 
 
-def get_db_service():
-    return DatabaseService()
 
 class DatabaseService:
-    def __init__(self, prod=False):
+    def __init__(self):
         self.logger = logging.getLogger("DatabaseService")
         if os.environ.get("RUNNING_IN_DOCKER"):
             self.client = pymongo.MongoClient("mongodb://MongoDB:27017", connect=False)
         else:
             self.client = pymongo.MongoClient(connect=False)
+        prod = True if os.environ.get("PRODUCTION") else False
         self.db = self.client["ck_db_prod"] if prod else self.client["ck_db"]
 
     def competition_exists(self,
@@ -185,6 +184,13 @@ class DatabaseService:
                          "$lte":date}}
         return self.db["participations"].find(query)
 
+    def get_competitor_participations(self, #TODO : faire un tri selon la phase de compétition
+                                      competitor_name,
+                                      competitor_category):
+        query = {"competitorName":competitor_name,
+                 "competitorCategory":competitor_category}
+        return self.db["participations"].find(query, sort=[("date", -1)])
+
     def get_competition_participations(self, competition_name, category="all"):
         query = {"competitionName":competition_name}
         if category != "all":
@@ -292,7 +298,6 @@ class DatabaseService:
     def is_phase(self, competition_name, simplified_phase):
         participation = self.db["participations"].find_one({"competitionName":competition_name})
         return participation["simplifiedCompetitionPhase"] == simplified_phase
-
 
     def get_all_competition_names(self):
         all_participations = self.db["participations"].find({})
