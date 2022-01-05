@@ -24,6 +24,7 @@ class DatabaseService:
             self.client = pymongo.MongoClient("mongodb://MongoDB:27017", connect=False)
         else:
             self.client = pymongo.MongoClient(connect=False)
+        prod = True if os.environ.get("PRODUCTION") else False
         self.db = self.client["ck_db_prod"] if prod else self.client["ck_db"]
 
     def competition_exists(self,

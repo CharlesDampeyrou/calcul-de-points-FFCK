@@ -21,8 +21,9 @@ class DatabaseManagementService:
             self.client = pymongo.MongoClient("mongodb://MongoDB:27017", connect=False)
         else:
             self.client = pymongo.MongoClient(connect=False)
+        prod = True if os.environ.get("PRODUCTION") else False
         self.db = self.client["ck_db_prod"] if prod else self.client["ck_db"]
-        self.db_service = DatabaseService(prod=prod)
+        self.db_service = DatabaseService()
 
     def reset_db(self):
         response = input("Delete the complete database ? (y/n)\n")
