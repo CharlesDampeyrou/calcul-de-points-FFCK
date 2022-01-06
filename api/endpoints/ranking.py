@@ -32,7 +32,7 @@ class Ranking(Resource):
         """
         db_service = get_db_service()
         data = request.args
-        date = datetime.fromisoformat(data.get("date"))
+        date = datetime.fromisoformat(data.get("date")[:10])
         point_type = data.get("pointType")
         category = data.get("category")
         nb_nat_min = int(data.get("nbNatMin"))
