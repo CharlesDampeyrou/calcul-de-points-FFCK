@@ -6,7 +6,7 @@ WORKDIR /app
 #RUN apk update && apk install gcc
 
 # Copy the current directory contents into the container at /app
-ADD . /app
+COPY . /app
 
 # Install the dependencies
 RUN pip install -r requirements.txt

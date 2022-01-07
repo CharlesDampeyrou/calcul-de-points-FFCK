@@ -24,14 +24,13 @@ if __name__ == "__main__":
     load_logging_configuration(logging_file)
     point_type = "skill_based"
     value_type = "3_4_skill_based"
-    production = True if os.environ.get("PRODUCTION") else False
 
     nb_nat_min = 3
     nb_comp_min = 4
     competition_validity_period = timedelta(days=365)
 
-    database_service = DatabaseService(prod=production)
-    db_management_service = DatabaseManagementService(prod=production)
+    database_service = DatabaseService()
+    db_management_service = DatabaseManagementService()
 
     csv_data_service = CsvDataService(database_service)
 
