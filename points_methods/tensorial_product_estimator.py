@@ -12,7 +12,7 @@ def estimate_tensorial_product(scores_df,
                                participations_df,
                                iterations_first_optimization=15,
                                removing_rate=0.2,
-                               iterations_final_optimization=30):
+                               iterations_final_optimization=35):
     competition_vector = pd.Series(1.0, index=scores_df.index)
     competitor_vector = improve_competitor_vector(scores_df,
                                                   participations_df,

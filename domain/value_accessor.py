@@ -47,9 +47,9 @@ class ValueAccessor:
         participations = filter_last_day_phases(participations,
                                                 date,
                                                 phase)
-        if len(participations) == 0:
-            return
         value = self.Value.get_value_from_participations(participations)
+        if value.nb_comp == 0:
+            return
         self.database_service.save_participation_value(competitor_name,
                                                        competitor_category,
                                                        competition_name,
