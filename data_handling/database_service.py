@@ -6,7 +6,7 @@ Created on Sun Jan 17 12:42:04 2021
 """
 import os
 import logging
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 import time
 from bson.son import SON
 
@@ -72,6 +72,41 @@ class DatabaseService:
                                                                 original_value))
         if len(participation_list) != 0:
             self.db["participations"].insert_many(participation_list)
+    
+    def add_ranking(self,
+                    competitor_name,
+                    competitor_category,
+                    date,
+                    point_type,
+                    rank,
+                    moy):
+        res = self.db["ranking"].find_one({"competitorName":competitor_name,
+                                           "competitorCategory":competitor_category,
+                                           "date":date})
+        if res is None:
+            self.db["ranking"].insert_one({"competitorName":competitor_name,
+                                           "competitorCategory":competitor_category,
+                                           "date":date,
+                                           point_type:{"rank":rank,
+                                                       "moy":moy}})
+        else:
+            self.db["ranking"].update_one({"competitorName":competitor_name,
+                                           "competitorCategory":competitor_category,
+                                           "date":date},
+                                          {"$set": {point_type+".rank":rank,
+                                                    point_type+".moy":moy}})
+    
+    def get_todays_competitor_ranking(self,
+                                      competitor_name,
+                                      competitor_category):
+        today_date = date.today()
+        today = datetime(today_date.year, today_date.month, today_date.day)
+        res = self.db["ranking"].find_one()
+        if res is None or res.get("date") != today:
+            self.create_todays_ranking()
+        return self.db["ranking"].find_one({"competitorName":competitor_name,
+                                            "competitorCategory":competitor_category})
+        
 
     def save_participation_value(self,
                                  competitor_name,
@@ -172,7 +207,30 @@ class DatabaseService:
                 "nbComp":0,
                 "moy":1000}
 
-
+    def create_todays_ranking(self):
+        """
+        Crée les classements et les moyennes de tous les athlètes pour la journée courante.
+        """
+        self.db["ranking"].drop()
+        self.db["ranking"].create_index([("competitorName", pymongo.ASCENDING),
+                                           ("competitorCategory", pymongo.ASCENDING)])
+        today_date = date.today()
+        today = datetime(today_date.year, today_date.month, today_date.day)
+        for point_type in ["scrapping", "skill_based"]:
+            for category in ["C1D", "C1H", "C2D", "C2H", "C2M", "K1D", "K1H"]:
+                ranking = list(self.get_ranking(today, point_type, category, 3, 4))
+                for rank, competitor in enumerate(ranking):
+                    if competitor["moy"] == 1000:
+                        continue # On n'ajoute pas le classement et la moyenne quand la moyenne n'existe pas
+                    self.add_ranking(competitor["_id"]["competitorName"],
+                                     category,
+                                     today,
+                                     point_type,
+                                     rank+1, # Le rang commence à 0
+                                     competitor["moy"])
+                
+        
+    
     def get_last_participations(self,
                                 competitor_name,
                                 competitor_category,

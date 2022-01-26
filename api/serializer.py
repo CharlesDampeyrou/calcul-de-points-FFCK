@@ -34,3 +34,9 @@ participation = api.model('Participation', {
     'valueTypes': fields.List(fields.String(description="Type de valeur"),
                               description="Types de valeurs calculées sur la compétition"),
     'values': fields.Raw(description="valeurs obtenues sur la compétition")})
+
+values_and_ranks = api.model('ValuesAndRanks', {
+    'competitorName': fields.String(description="Nom du compétiteur"),
+    'competitorCategory': fields.String(description="Catégorie du compétiteur"),
+    'scrapping': fields.Raw(description="rang et valeur pour le scrapping"),
+    'skill_based': fields.Raw(description="Ran et valeur pour la méthode proposée")})

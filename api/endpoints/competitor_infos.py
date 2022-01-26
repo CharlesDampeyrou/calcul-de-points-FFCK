@@ -13,7 +13,7 @@ from flask import request, current_app
 from flask_restplus import Resource
 
 from api.restplus import api
-from api.serializer import participation
+from api.serializer import participation, values_and_ranks
 from data_handling.database_service import DatabaseService
 
 ns = api.namespace('competitor_infos', description='Récupération des informations concernant un compétiteur')
@@ -34,6 +34,23 @@ class Participations(Resource):
         return (list(db_service.get_competitor_participations(competitor_name,
                                                               competitor_category)),
                 200)
+
+@ns.route('/values_and_ranks')
+class ValuesAndRanks(Resource):
+    
+    @api.marshal_with(values_and_ranks)
+    def get(self):
+        """
+        Returns the values and ranking for the current method and for the proposed method
+        """
+        db_service = DatabaseService()
+        data = request.args
+        competitor_name = data.get("competitorName")
+        competitor_category = data.get("competitorCategory")
+        return (db_service.get_todays_competitor_ranking(competitor_name,
+                                                         competitor_category),
+                200)
+        
 
 @ns.route('/value')
 class Value(Resource):
