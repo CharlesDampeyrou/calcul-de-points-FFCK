@@ -40,3 +40,11 @@ values_and_ranks = api.model('ValuesAndRanks', {
     'competitorCategory': fields.String(description="Catégorie du compétiteur"),
     'scrapping': fields.Raw(description="rang et valeur pour le scrapping"),
     'skill_based': fields.Raw(description="Ran et valeur pour la méthode proposée")})
+
+competition = api.model('Competition', {
+    'competitionName': fields.String(description="Nom de la competition"),
+    'simplifiedCompetitionName': fields.String(description="Version courte du nom de compétition"),
+    'competitionPhase': fields.String(description="Phase de compétition"),
+    'simplifiedCompetitionPhase': fields.String(description="Phase de compétition mise en forme"),
+    'date': fields.String(description="Date de la compétition au format ISO"),
+    'level': fields.String(description="Niveau de la compétition")})

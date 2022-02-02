@@ -13,6 +13,7 @@ from flask import Flask, Blueprint
 from api.restplus import api
 from api.endpoints.ranking import ns as ranking_namespace
 from api.endpoints.competitor_infos import ns as competitor_infos_namespace
+from api.endpoints.competition_infos import ns as competition_infos_namespace
 
 
 app = Flask("apiClassementCanoeKayak")
@@ -22,6 +23,7 @@ blueprint = Blueprint('api', __name__)
 api.init_app(blueprint)
 api.add_namespace(ranking_namespace)
 api.add_namespace(competitor_infos_namespace)
+api.add_namespace(competition_infos_namespace)
 app.register_blueprint(blueprint)
 
 

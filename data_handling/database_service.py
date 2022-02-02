@@ -140,6 +140,9 @@ class DatabaseService:
         assert("pointType" in point_computing_details)
         assert("competitionName" in point_computing_details)
         self.db["pointComputingDetails"].insert_one(point_computing_details)
+    
+    def get_point_computing_details(self, competition_name):
+        return self.db["pointComputingDetails"].find_one({"competitionName":competition_name})
 
     def get_ranking(self,
                     date,
@@ -249,11 +252,15 @@ class DatabaseService:
                  "competitorCategory":competitor_category}
         return self.db["participations"].find(query, sort=[("date", -1)])
 
-    def get_competition_participations(self, competition_name, category="all"):
+    def get_competition_participations(self, competition_name, category="all", sort_by_score=False):
         query = {"competitionName":competition_name}
         if category != "all":
             query["competitorCategory"] = category
-        return self.db["participations"].find(query)
+        if sort_by_score:
+            order=[("score", 1)]
+        else:
+            order = []
+        return self.db["participations"].find(query, sort=order)
 
     def get_participations_on_period(self, starting_date, ending_date, phase=None):
         """
@@ -280,6 +287,19 @@ class DatabaseService:
         if phase is not None:
             query["simplifiedCompetitionPhase"] = phase
         return self.db["participations"].distinct("competitionName", filter=query)
+    
+    def get_year_competitions(self, year):
+        """
+        Renvoit une liste comportant une participation pour chacune des competitions de l'année choisie.
+        """
+        starting_date = datetime(year, 1, 1)
+        ending_date = datetime(year+1, 1, 1)
+        query = {"date":{"$gte":starting_date, "$lt":ending_date}}
+        competition_names = self.db["participations"].distinct("competitionName", filter=query)
+        competitions = list()
+        for competition_name in competition_names:
+            competitions.append(self.db["participations"].find_one({"competitionName":competition_name}))
+        return competitions
 
     def get_competitions_on_period(self, starting_date, ending_date, level="all", phase=None):
         query = get_participations_period_query(starting_date, ending_date, phase=phase)
