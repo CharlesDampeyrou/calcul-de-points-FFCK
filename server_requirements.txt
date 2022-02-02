@@ -1,0 +1,14 @@
+
+numpy
+pandas
+pyyaml
+
+pymongo
+unidecode
+scipy
+
+Flask
+flask_restplus
+werkzeug==0.16.0
+
+uWSGI
