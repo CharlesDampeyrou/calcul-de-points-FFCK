@@ -299,6 +299,7 @@ class DatabaseService:
         competitions = list()
         for competition_name in competition_names:
             competitions.append(self.db["participations"].find_one({"competitionName":competition_name}))
+        competitions.sort(key=lambda x:x["date"]) # TODO : Faire un tri selon les phases de compétition
         return competitions
 
     def get_competitions_on_period(self, starting_date, ending_date, level="all", phase=None):
