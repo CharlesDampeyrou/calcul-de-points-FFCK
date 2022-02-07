@@ -33,7 +33,8 @@ participation = api.model('Participation', {
     'points': fields.Raw(description="Points obtenus sur la compétition"),
     'valueTypes': fields.List(fields.String(description="Type de valeur"),
                               description="Types de valeurs calculées sur la compétition"),
-    'values': fields.Raw(description="valeurs obtenues sur la compétition")})
+    'values': fields.Raw(description="valeurs obtenues sur la compétition"),
+    'score': fields.Float(description="Score réalisé lors de la compétition")})
 
 values_and_ranks = api.model('ValuesAndRanks', {
     'competitorName': fields.String(description="Nom du compétiteur"),
