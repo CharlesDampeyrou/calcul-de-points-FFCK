@@ -62,8 +62,6 @@ def ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type):
         
         def get_value_from_participations(participations):
             point_type = Value.POINT_TYPE
-            if len(participations) == 0 :
-                return Value(1000, 0, 0) #convention si le compétiteur n'a pas de course
             comp_reg_list = list()
             comp_nat_list = list()
             for participation in participations :
@@ -73,6 +71,8 @@ def ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type):
                     comp_reg_list.append(participation)
                 else :
                     comp_nat_list.append(participation)
+            if len(comp_reg_list) + len(comp_nat_list) == 0:
+                return Value(1000, 0, 0) #convention si le compétiteur n'a pas de course
             nb_comp = min(len(comp_nat_list)+len(comp_reg_list), Value.NB_COMP_MIN)
             nb_nat = min(len(comp_nat_list), Value.NB_NAT_MIN)
             comp_nat_list.sort(key = lambda x:x["points"][point_type])
