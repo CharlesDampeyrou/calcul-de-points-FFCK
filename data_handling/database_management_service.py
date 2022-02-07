@@ -30,6 +30,7 @@ class DatabaseManagementService:
         if response == "y":
             self.db["participations"].drop()
             self.db["pointComputingDetails"].drop()
+            self.db["ranking"].drop()
 
     def create_indexes(self):
         self.logger.info("Mise à jour des indexes pour la base de données")
