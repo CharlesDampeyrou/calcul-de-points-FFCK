@@ -1,6 +1,6 @@
 # Calcul de points FFCK
 
-Attention, ce projet est encore en cours et son utilisation nécessite de se plonger dans le code.
+Attention, ce projet est encore en cours et son utilisation nécessite de se plonger dans le code. La visualisation la plus simple et pertinente des données est disponible [ici](https://classementffck.bubbleapps.io/version-test)
 
 ## Introduction
 
@@ -13,12 +13,12 @@ Le code fourni est du code python 3 et nécessite la présence de MongoDB sur la
 Afin de pouvoir mettre en place les estimations de performance et calcul de classement à l'aide de ce répo git, il faut respecter les étapes suivantes :
 - installer python3 et MongoDB
 - installer les librairies nécessaires à l'aide de la commande "pip install -r requirements.txt
-- récupérer la base de données des courses depuis le site de la FFCK en executant le script data_handling/scrapper.py
-- nettoyer la base de données ainsi récupérée en executant la méthode clean_database() de data_handling/database_management_service.py
+- créer la base de données MongoDB en executant le script points_updating.py
 
 ## Calcul de classements et de métriques
 
-Une fois la base de données récupérée et nettoyée, il est possible de réaliser des estimations de performance et de calculer des classements à l'aide de point_type_creation.
+Une fois la base de données récupérée, il est possible de réaliser des estimations de performance et de calculer des classements à l'aide de point_type_creation.
 Les méthodes de classements sont disponibles dans le dossier points_methods.
 Il est ensuite possible d'évaluer les méthodes utilisées à l'aide du module data_analysis/analyst.py
+Le script run.py permet de lancer une API afin d'accéder aux données de la base de données.
 
