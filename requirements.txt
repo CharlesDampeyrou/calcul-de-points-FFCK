@@ -12,8 +12,8 @@ aiohttp
 nest-asyncio
 scipy
 
-Flask
-flask_restplus
-werkzeug==0.16.0
+Flask==2.0.3
+flask_restx
+werkzeug==2.0.3
 
 uWSGI

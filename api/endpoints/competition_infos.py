@@ -10,9 +10,9 @@ import logging
 from datetime import datetime
 
 from flask import request, current_app
-from flask_restplus import Resource
+from flask_restx import Resource
 
-from api.restplus import api
+from api.restx import api
 from api.serializer import participation, competition
 from data_handling.database_service import DatabaseService
 

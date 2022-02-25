@@ -5,8 +5,8 @@ Created on Sun Dec 19 10:11:51 2021
 @author: charl
 """
 
-from flask_restplus import fields
-from api.restplus import api
+from flask_restx import fields
+from api.restx import api
 
 competitor = api.model("Competitor", {
     "competitorName": fields.String(description="Nom du compétiteur"),
