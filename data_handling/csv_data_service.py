@@ -53,7 +53,10 @@ class CsvDataService:
             msg = "La competition '%s' est déjà enregistrée au format CSV"
             self.logger.warning(msg % competition_name)
             return
-        with open(file_path, 'w', newline='') as csv_file :
+        else:
+            msg = "Enregistrement de la course %s"
+            self.logger.debug(msg % competition_name)
+        with open(file_path, 'w', newline='', encoding="ISO-8859-1") as csv_file :
             writer = csv.writer(csv_file, dialect="unix")
             writer.writerow([competition_name,
                              simplified_competition_name,
@@ -92,7 +95,7 @@ class CsvDataService:
         return [Path(self.csv_database_directory, fp) for fp in files_paths]
 
     def get_competition(self, file_path):
-        with open(file_path, 'r', encoding="latin1") as file :
+        with open(file_path, 'r', encoding="ISO-8859-1") as file :
             reader = csv.reader(file, dialect="unix")
             first_line = next(reader)
             (competition_name,
