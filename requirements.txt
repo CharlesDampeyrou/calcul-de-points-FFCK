@@ -13,7 +13,7 @@ nest-asyncio
 scipy
 
 Flask==2.0.3
-flask_restx
+flask_restx==0.5.1
 werkzeug==2.0.3
 
 uWSGI
