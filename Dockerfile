@@ -9,7 +9,7 @@ WORKDIR /app
 COPY . /app
 
 # Install the dependencies
-RUN pip install -r requirements.txt
+RUN pip install -r server_requirements.txt
 
 # Create a uwsgi log directory and files
 RUN mkdir /var/log/uwsgi
