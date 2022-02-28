@@ -9,7 +9,6 @@ WORKDIR /app
 COPY . /app
 
 # Install the dependencies
-RUN pip upgrade
 RUN pip install -r server_requirements.txt
 
 # Create a uwsgi log directory and files
