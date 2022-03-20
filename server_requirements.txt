@@ -1,10 +1,15 @@
 
+beautifulsoup4==4.8.2
+requests
 numpy
 pandas
 pyyaml
 
+lxml
 pymongo
 unidecode
+aiohttp
+nest-asyncio
 scipy
 
 Flask==2.0.3
