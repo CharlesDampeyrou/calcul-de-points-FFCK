@@ -1,14 +1,19 @@
 
+beautifulsoup4==4.8.2
+requests
 numpy
 pandas
 pyyaml
 
+lxml
 pymongo
 unidecode
+aiohttp
+nest-asyncio
 scipy
 
-Flask
-flask_restplus
-werkzeug==0.16.0
+Flask==2.0.3
+flask_restx==0.5.1
+werkzeug==2.0.3
 
 uWSGI
