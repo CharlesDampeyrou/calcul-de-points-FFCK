@@ -12,7 +12,7 @@ aiohttp
 nest-asyncio
 scipy
 
-Flask==2.0.3
+Flask==2.3.2
 flask_restx==0.5.1
 werkzeug==2.0.3
 
