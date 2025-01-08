@@ -1,8 +1,9 @@
 matplotlib
-beautifulsoup4==4.8.2
+beautifulsoup4>=4.8.2
 requests
 numpy
 pandas
+scikit-learn
 pyyaml
 pytest
 lxml
@@ -12,8 +13,8 @@ aiohttp
 nest-asyncio
 scipy
 
-Flask==2.3.2
-flask_restx==0.5.1
-werkzeug==2.2.3
+Flask>=2.3.2
+flask_restx>=0.5.1
+werkzeug>=2.2.3
 
 uWSGI
