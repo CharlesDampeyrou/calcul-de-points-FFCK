@@ -31,7 +31,7 @@ class DatabaseService:
 
     def close(self):
         self.connection.close()
-    
+
     def create_tables(self):
         create_competitions_q = """
             CREATE TABLE IF NOT EXISTS competitions (
@@ -72,8 +72,18 @@ class DatabaseService:
                 FOREIGN KEY (competitor_id) REFERENCES competitors(competitor_id),
                 FOREIGN KEY (competition_id) REFERENCES competitions(competition_id)
             )"""
+        create_values_q = """
+            CREATE TABLE IF NOT EXISTS values (
+                value_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                competitor_id INTEGER,
+                competition_id INTEGER,
+                value_type TEXT NOT NULL,
+                value REAL NOT NULL,
+                FOREIGN KEY (competitor_id) REFERENCES competitors(competitor_id),
+                FOREIGN KEY (competition_id) REFERENCES competitions(competition_id)
+            )"""
         self.execute_query(create_competitions_q)
         self.execute_query(create_competitors_q)
         self.execute_query(create_participations_q)
         self.execute_query(create_points_q)
-
+        self.execute_query(create_values_q)
