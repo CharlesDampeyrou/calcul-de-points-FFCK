@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from random import randint
+from urllib.parse import quote, unquote
 
 import pandas as pd
 from dash import html, dcc, Input, Output
@@ -7,6 +8,7 @@ from dash.dash_table import DataTable
 from plotly import graph_objects as go
 
 from ..app import app
+from ..store import services
 
 layout = html.Div(
     [
@@ -45,22 +47,33 @@ layout = html.Div(
     Input("url", "pathname"),
 )
 def update_competitor_page(pathname):
-    name = get_competitor_name(pathname)
-    details = get_competitor_details(pathname)
+    point_type = "scrapping"
+    name, cat = get_competitor_name_cat(pathname)
+    name_cat = f"{name} {cat}"
+    details = get_competitor_details(name, cat, point_type)
     fig = get_competitor_result_graph(pathname)
     tables = get_competitor_result_tables(pathname)
-    return name, details, fig, tables
+    return name_cat, details, fig, tables
 
 
-def get_competitor_name(pathname):
-    return "Alice C1D"
+def get_competitor_name_cat(pathname):
+    suffix = pathname.split("/")[-1]
+    cat = suffix.split("_")[-1]
+    name = unquote(suffix.split("_")[0])
+    return name, cat
 
 
-def get_competitor_details(pathname):
+def get_competitor_details(name, cat, point_type):
+    db_service = services.get_db_service()
+    request_res = db_service.get_todays_competitor_ranking(name, cat)
+    value = request_res.get(point_type).get("moy")
+    if value is None:
+        value = " "
+    rank = request_res.get(point_type).get("rank")
     res = [
-        {"detail_name": "Valeur", "detail_value": 205},
-        {"detail_name": "Place au classement", "detail_value": 55},
-        {"detail_name": "Catégorie", "detail_value": f"[C1D](/ranking/C1D)"},
+        {"detail_name": "Valeur", "detail_value": value},
+        {"detail_name": "Place au classement", "detail_value": rank},
+        {"detail_name": "Catégorie", "detail_value": f"[{cat}](/ranking/{cat})"},
     ]
     return res
 
