@@ -12,7 +12,11 @@ from ..store import services
 
 layout = html.Div(
     [
-        html.H1("Alice C1D", style={"textAlign": "center"}, id="competitor-name"),
+        html.H1(
+            "competitorName Category",
+            style={"textAlign": "center"},
+            id="competitor-name",
+        ),
         DataTable(
             data=None,
             id="competitor-details",
@@ -51,8 +55,9 @@ def update_competitor_page(pathname):
     name, cat = get_competitor_name_cat(pathname)
     name_cat = f"{name} {cat}"
     details = get_competitor_details(name, cat, point_type)
-    fig = get_competitor_result_graph(pathname)
-    tables = get_competitor_result_tables(pathname)
+    competitor_participations = get_competitor_participations(name, cat)
+    fig = get_competitor_result_graph(competitor_participations, point_type)
+    tables = get_competitor_result_tables(competitor_participations, point_type)
     return name_cat, details, fig, tables
 
 
@@ -78,14 +83,61 @@ def get_competitor_details(name, cat, point_type):
     return res
 
 
-def get_competitor_result_graph(pathname):
+def get_competitor_participations(name, cat):
+    db_service = services.get_db_service()
+    return list(db_service.get_competitor_participations(name, cat))
+
+
+def get_competitor_result_graph(competitor_participations, point_type):
+    competition_names = [
+        p["simplifiedCompetitionName"] for p in competitor_participations
+    ]
+    points = [p["points"][point_type] for p in competitor_participations]
+    values = [
+        p["values"].get(point_type, {"points": None})["points"]
+        for p in competitor_participations
+    ]
+    dates = [p["date"].date() for p in competitor_participations]
+    levels = [p["level"] for p in competitor_participations]
+    # Create a DataFrame for the results
+    competition_results = pd.DataFrame(
+        {
+            "competition_name": competition_names,
+            "date": dates,
+            "points": points,
+            "value": values,
+            "level": levels,
+        }
+    )
+    # Ensure the DataFrame is sorted by date
+    competition_results = competition_results.sort_values(by="date", ascending=True)
     fig = go.Figure()
+    if competition_results.empty:
+        fig.add_annotation(
+            text="Aucun résultat disponible",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            font=dict(size=20),
+        )
+        return fig
+    color_dict = {
+        "Championnats de France": "red",
+        "Nationale 3": "blue",
+        "Nationale 2": "orange",
+        "Nationale 1": "purple",
+        "Régional": "green",
+    }
     fig.add_trace(
         go.Scatter(
             x=competition_results["date"],
             y=competition_results["points"],
             mode="markers",
             name="Points",
+            marker_color=competition_results["level"].map(color_dict),
+            hovertext=competition_results["competition_name"],
         )
     )
     fig.add_trace(
@@ -94,18 +146,45 @@ def get_competitor_result_graph(pathname):
             y=competition_results["value"],
             mode="lines",
             name="Valeur",
+            line=dict(
+                color="cyan",
+                width=2,
+            ),
         )
     )
     return fig
 
 
-def get_competitor_result_tables(pathname):
-    df = competition_results.copy()
-    df["competition_name"] = df["competition_name"].apply(
-        lambda x: f"[{x}](/competition/{x.split()[1]})"
+def get_competitor_result_tables(competitor_participations, point_type):
+    if len(competitor_participations) == 0:
+        return [html.Div("Aucun résultat disponible")]
+    simplified_competition_names = [
+        p["simplifiedCompetitionName"] for p in competitor_participations
+    ]
+    competition_names = [p["competitionName"] for p in competitor_participations]
+    levels = [p["level"] for p in competitor_participations]
+    displayed_competition_names = [
+        f"[{simp_name}](/competition/{quote(name)}) {level}"
+        for (simp_name, level, name) in zip(
+            simplified_competition_names, levels, competition_names
+        )
+    ]
+    dates = [p["date"].date().isoformat() for p in competitor_participations]
+    points = [p["points"][point_type] for p in competitor_participations]
+    values = [
+        p["values"].get(point_type, {"points": None})["points"]
+        for p in competitor_participations
+    ]
+    results_df = pd.DataFrame(
+        {
+            "competition_name": displayed_competition_names,
+            "date": dates,
+            "points": points,
+            "value": values,
+        }
     )
     table = DataTable(
-        data=df.to_dict("records"),
+        data=results_df.to_dict("records"),
         columns=[
             {
                 "name": "Competition",
