@@ -63,17 +63,16 @@ def update_competitor_page(pathname):
 
 def get_competitor_name_cat(pathname):
     suffix = pathname.split("/")[-1]
+    suffix = unquote(suffix)
     cat = suffix.split("_")[-1]
-    name = unquote(suffix.split("_")[0])
+    name = suffix.split("_")[0]
     return name, cat
 
 
 def get_competitor_details(name, cat, point_type):
     db_service = services.get_db_service()
     request_res = db_service.get_todays_competitor_ranking(name, cat)
-    value = request_res.get(point_type).get("moy")
-    if value is None:
-        value = " "
+    value = request_res.get(point_type, {"moy": None})["moy"]
     rank = request_res.get(point_type).get("rank")
     res = [
         {"detail_name": "Valeur", "detail_value": value},
