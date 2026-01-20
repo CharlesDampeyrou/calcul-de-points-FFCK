@@ -16,6 +16,7 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         nb_hidden_layers_per_channel_transform_enc,
         hidden_channels_dec,
         nb_hidden_layers_dec,
+        huber_loss_delta,
     ):
         super().__init__()
         self.encoder = PermutationInvariantEncoder(
@@ -32,7 +33,7 @@ class CompetitionAutoencoderNet(pl.LightningModule):
             hidden_channels=hidden_channels_dec,
             nb_hidden_layers=nb_hidden_layers_dec,
         )
-        self.loss_func = nn.HuberLoss()
+        self.loss_func = nn.HuberLoss(delta=huber_loss_delta)
 
     def forward(self, x, mask):
         z_line, z_col = self.encoder(x, mask)

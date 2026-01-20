@@ -25,6 +25,7 @@ class PermutationInvariantEncoder(nn.Module):
                 hidden_channels=hidden_channels,
                 out_channels=hidden_channels,
                 nb_hidden_layers=nb_hidden_layers_per_channel_transform,
+                last_layer_activation=True,
             )
         )
         for _ in range(nb_channel_transformations - 2):
@@ -34,6 +35,7 @@ class PermutationInvariantEncoder(nn.Module):
                     hidden_channels=hidden_channels,
                     out_channels=hidden_channels,
                     nb_hidden_layers=nb_hidden_layers_per_channel_transform,
+                    last_layer_activation=True,
                 )
             )
         self.channel_transformation_layers.append(
@@ -42,6 +44,7 @@ class PermutationInvariantEncoder(nn.Module):
                 hidden_channels=hidden_channels,
                 out_channels=zdim_line + zdim_col,
                 nb_hidden_layers=nb_hidden_layers_per_channel_transform,
+                last_layer_activation=False,
             )
         )
 
@@ -101,6 +104,7 @@ class PermutationInvariantDecoder(nn.Module):
             hidden_channels=hidden_channels,
             out_channels=1,
             nb_hidden_layers=nb_hidden_layers,
+            last_layer_activation=False,
         )
 
     def forward(self, z_line, z_col):
@@ -121,6 +125,7 @@ class RepeatedLocalConv2D(nn.Module):
         hidden_channels,
         out_channels,
         nb_hidden_layers,
+        last_layer_activation=True,
     ):
         super().__init__()
         self.in_channels = (in_channels,)
@@ -135,17 +140,34 @@ class RepeatedLocalConv2D(nn.Module):
         )
         for _ in range(nb_hidden_layers):
             self.layers.append(
+                nn.Sequential(
+                    nn.Conv2d(
+                        in_channels=hidden_channels,
+                        out_channels=hidden_channels,
+                        kernel_size=1,
+                    ),
+                    nn.ReLU(),
+                )
+            )
+        if last_layer_activation:
+            self.layers.append(
+                nn.Sequential(
+                    nn.Conv2d(
+                        in_channels=hidden_channels,
+                        out_channels=out_channels,
+                        kernel_size=1,
+                    ),
+                    nn.ReLU(),
+                )
+            )
+        else:
+            self.layers.append(
                 nn.Conv2d(
                     in_channels=hidden_channels,
-                    out_channels=hidden_channels,
+                    out_channels=out_channels,
                     kernel_size=1,
                 )
             )
-        self.layers.append(
-            nn.Conv2d(
-                in_channels=hidden_channels, out_channels=out_channels, kernel_size=1
-            )
-        )
 
     def forward(self, x):
         for i, layer in enumerate(self.layers):
