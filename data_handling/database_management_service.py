@@ -14,6 +14,7 @@ import pickle
 
 from data_handling.database_service import DatabaseService
 
+
 class DatabaseManagementService:
     def __init__(self):
         self.logger = logging.getLogger("DatabaseManagementService")
@@ -34,18 +35,17 @@ class DatabaseManagementService:
 
     def create_indexes(self):
         self.logger.info("Mise à jour des indexes pour la base de données")
-        self.db["participations"].create_index([("competitorCategory",1),
-                                                ("competitorName",1),
-                                                ("competition_name",1)])
-        self.db["participations"].create_index([("competitorCategory",1),
-                                                ("competitorName",1),
-                                                ("date",1)])
+        self.db["participations"].create_index(
+            [("competitorCategory", 1), ("competitorName", 1), ("competition_name", 1)]
+        )
+        self.db["participations"].create_index(
+            [("competitorCategory", 1), ("competitorName", 1), ("date", 1)]
+        )
         self.db["participations"].create_index("competitionName")
-        self.db["participations"].create_index([("date",1),
-                                                ("competitionName",1)])
-        self.db["participations"].create_index([("date",1),
-                                                ("competitorCategory",1),
-                                                ("competitorName",1)])
+        self.db["participations"].create_index([("date", 1), ("competitionName", 1)])
+        self.db["participations"].create_index(
+            [("date", 1), ("competitorCategory", 1), ("competitorName", 1)]
+        )
 
     def create_backup(self, backup_name):
         backup_db = self.client[backup_name]
@@ -67,16 +67,24 @@ class DatabaseManagementService:
         self.create_indexes()
 
     def delete_point_type(self, point_type):
-        self.db["participations"].update_many({},
-                                              {"$pull":{"pointTypes":point_type},
-                                               "$unset":{"points."+point_type:""}})
-        self.db["pointComputingDetails"].delete_many({"pointType":point_type})
+        self.db["participations"].update_many(
+            {},
+            {
+                "$pull": {"pointTypes": point_type},
+                "$unset": {"points." + point_type: ""},
+            },
+        )
+        self.db["pointComputingDetails"].delete_many({"pointType": point_type})
 
     def delete_value_type(self, value_type):
-        self.db["participations"].update_many({},
-                                              {"$pull":{"valueTypes":value_type},
-                                               "$unset":{"values."+value_type:""}})
-        self.db["pointComputingDetails"].delete_many({"pointType":value_type})
+        self.db["participations"].update_many(
+            {},
+            {
+                "$pull": {"valueTypes": value_type},
+                "$unset": {"values." + value_type: ""},
+            },
+        )
+        self.db["pointComputingDetails"].delete_many({"pointType": value_type})
 
     def get_point_types(self):
         return self.db["participations"].distinct("pointTypes")
@@ -86,7 +94,7 @@ class DatabaseManagementService:
         return values
 
     def delete_event(self, event_name):
-        self.db["participations"].delete_many({"competitionName":event_name})
+        self.db["participations"].delete_many({"competitionName": event_name})
 
     def delete_team_events(self):
         event_name_list = self.db_service.get_all_competition_names()
@@ -102,27 +110,42 @@ class DatabaseManagementService:
         authorized_categories = ["C1D", "C1H", "C2D", "C2H", "C2M", "K1D", "K1H"]
         for cat in authorized_categories:
             catM = cat + "M"
-            self.db["participations"].update_many({"competitorCategory":catM},
-                                                  {"$set":{"competitorCategory":cat}})
-        self.db["participations"].delete_many({"competitorCategory":{"$nin":authorized_categories}})
+            self.db["participations"].update_many(
+                {"competitorCategory": catM}, {"$set": {"competitorCategory": cat}}
+            )
+        self.db["participations"].delete_many(
+            {"competitorCategory": {"$nin": authorized_categories}}
+        )
 
     def delete_duplicated_participations(self):
-        pipeline = [{"$group":{"_id":{"competitorName":"$competitorName",
-                                       "competitorCategory":"$competitorCategory",
-                                       "competitionName":"$competitionName"},
-                                "count":{"$sum":1},
-                                "points":{"$addToSet":"$points.scrapping"}}}]
-        participations = self.db["participations"].aggregate(pipeline, allowDiskUse=True)
+        pipeline = [
+            {
+                "$group": {
+                    "_id": {
+                        "competitorName": "$competitorName",
+                        "competitorCategory": "$competitorCategory",
+                        "competitionName": "$competitionName",
+                    },
+                    "count": {"$sum": 1},
+                    "points": {"$addToSet": "$points.scrapping"},
+                }
+            }
+        ]
+        participations = self.db["participations"].aggregate(
+            pipeline, allowDiskUse=True
+        )
         for p in participations:
-            if p["count"]>1:
+            if p["count"] > 1:
                 competitor_name = p["_id"]["competitorName"]
                 competitor_category = p["_id"]["competitorCategory"]
                 competition_name = p["_id"]["competitionName"]
                 points = min(p["points"])
-                query = {"competitorName":competitor_name,
-                         "competitorCategory":competitor_category,
-                         "competitionName":competition_name,
-                         "points.scrapping":points}
+                query = {
+                    "competitorName": competitor_name,
+                    "competitorCategory": competitor_category,
+                    "competitionName": competition_name,
+                    "points.scrapping": points,
+                }
                 self.db["participations"].delete_one(query)
 
     def clean_database(self):
@@ -135,11 +158,19 @@ class DatabaseManagementService:
         self.create_indexes()
 
     def get_duplicated_participations(self):
-        pipeline = [{"$group":{"_id":{"competitorName":"$competitorName",
-                                       "competitorCategory":"$competitorCategory",
-                                       "competitionName":"$competitionName"},
-                                "count":{"$sum":1},
-                                "points":{"$addToSet":"$points.scrapping"}}}]
+        pipeline = [
+            {
+                "$group": {
+                    "_id": {
+                        "competitorName": "$competitorName",
+                        "competitorCategory": "$competitorCategory",
+                        "competitionName": "$competitionName",
+                    },
+                    "count": {"$sum": 1},
+                    "points": {"$addToSet": "$points.scrapping"},
+                }
+            }
+        ]
         return self.db["participations"].aggregate(pipeline, allowDiskUse=True)
 
 
@@ -147,15 +178,18 @@ def possible_team_event(event_name):
     event_name_simplified = unidecode.unidecode(event_name).lower()
     return "equipe" in event_name_simplified or "patrouille" in event_name_simplified
 
+
 class TeamEventClassifier:
     def __init__(self):
         self.logger = logging.getLogger("TeamEventClassifier")
-        self.pkl_file_path = Path(Path.cwd(), "data_handling", "team_event_classification.pkl")
+        self.pkl_file_path = Path(
+            Path.cwd(), "data_handling", "team_event_classification.pkl"
+        )
         (self.team_events, self.not_team_events) = self.load_pickle_file()
 
     def load_pickle_file(self):
         try:
-            with open(self.pkl_file_path, 'rb') as file:
+            with open(self.pkl_file_path, "rb") as file:
                 (team_events, not_team_events) = pickle.load(file)
         except FileNotFoundError:
             msg = "Attention : pas de fichier trouvé pour la suppression des courses par équipes."
@@ -177,16 +211,14 @@ class TeamEventClassifier:
         elif response == "n":
             self.not_team_events.append(event_name)
             return False
-        else :
+        else:
             self.logger.error("Entrée non reconnue, veuillez recommencer")
             return self.is_team_event(event_name)
 
     def save(self):
-        with open(self.pkl_file_path, 'wb') as file:
-            to_save = (self.team_events,
-                       self.not_team_events)
+        with open(self.pkl_file_path, "wb") as file:
+            to_save = (self.team_events, self.not_team_events)
             pickle.dump(to_save, file)
-
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ from points_methods.skill_based_method import PointsComputer
 
 
 if __name__ == "__main__":
-    logging_file = Path(Path.cwd(),"tools", "logging.yml")
+    logging_file = Path(Path.cwd(), "tools", "logging.yml")
     load_logging_configuration(logging_file)
     point_type = "skill_based"
     value_type = "3_4_skill_based"
@@ -39,8 +39,9 @@ if __name__ == "__main__":
     db_management_service.clean_database()
 
     Value = ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type)
-    value_accessor = ValueAccessor(database_service, Value, competition_validity_period=competition_validity_period)
+    value_accessor = ValueAccessor(
+        database_service, Value, competition_validity_period=competition_validity_period
+    )
     point_computer = PointsComputer(point_type, value_accessor, database_service)
-    competition_processor = CompetitionProcessor(database_service,
-                                                 point_computer)
+    competition_processor = CompetitionProcessor(database_service, point_computer)
     competition_processor.update_point_type()
