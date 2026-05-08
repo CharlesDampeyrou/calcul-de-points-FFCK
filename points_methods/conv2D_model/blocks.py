@@ -53,15 +53,15 @@ class PermutationInvariantEncoder(nn.Module):
             # Local transformation
             x_transformed = layer(x)
             # Adding information from lines and columns
-            masked_x_transformed = x_transformed * mask.unsqueeze(0).unsqueeze(0)
+            masked_x_transformed = x_transformed * mask.unsqueeze(0)
             line_mean = x_transformed.mean(dim=3).unsqueeze(3).expand_as(x_transformed)
             col_mean = x_transformed.mean(dim=2).unsqueeze(2).expand_as(x_transformed)
             masked_line_mean = masked_x_transformed.sum(dim=3) / mask.sum(
-                dim=1
+                dim=2
             ).unsqueeze(0)
             masked_line_mean = masked_line_mean.unsqueeze(3).expand_as(x_transformed)
             masked_col_mean = masked_x_transformed.sum(dim=2) / mask.sum(
-                dim=0
+                dim=1
             ).unsqueeze(0)
             masked_col_mean = masked_col_mean.unsqueeze(2).expand_as(x_transformed)
             x = torch.concat(
@@ -77,16 +77,16 @@ class PermutationInvariantEncoder(nn.Module):
         last_layer = self.channel_transformation_layers[-1]
         x_transformed = last_layer(x)
         if self.output_using_mask:
-            masked_x_transformed = x_transformed * mask.unsqueeze(0).unsqueeze(0)
-            z_line = masked_x_transformed[:, : self.zdim_col, :, :].sum(
+            masked_x_transformed = x_transformed * mask.unsqueeze(0)
+            z_line = masked_x_transformed[:, : self.zdim_line, :, :].sum(
                 dim=3
-            ) / mask.sum(dim=1).unsqueeze(0)
-            z_col = masked_x_transformed[:, self.zdim_col :, :, :].sum(
+            ) / mask.sum(dim=2).unsqueeze(0)
+            z_col = masked_x_transformed[:, self.zdim_line :, :, :].sum(
                 dim=2
-            ) / mask.sum(dim=0).unsqueeze(0)
+            ) / mask.sum(dim=1).unsqueeze(0)
         else:
-            z_line = x_transformed.mean(dim=3)
-            z_col = x_transformed.mean(dim=2)
+            z_line = x_transformed[:,:self.zdim_line,:,:].mean(dim=3)
+            z_col = x_transformed[:,self.zdim_line:,:,:].mean(dim=2)
         return z_line, z_col
 
 
@@ -172,8 +172,9 @@ class RepeatedLocalConv2D(nn.Module):
     def forward(self, x):
         for i, layer in enumerate(self.layers):
             if (i == 0 and self.in_channels != self.hidden_channels) or (
-                i == self.nb_hidden_layers and self.hidden_channels != self.out_channels
+                i == self.nb_hidden_layers+1 and self.hidden_channels != self.out_channels
             ):
                 x = layer(x)
             else:
                 x = x + layer(x)
+        return x

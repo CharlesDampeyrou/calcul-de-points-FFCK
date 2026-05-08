@@ -45,7 +45,7 @@ class CompetitionAutoencoderNet(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, mask = batch
         x0_hat = self.forward(x, mask)
-        masked_error = (x0_hat - x[:, :1, :, :]) * mask.unsqueeze(0).unsqueeze(0)
+        masked_error = (x0_hat - x[:, :1, :, :]) * mask.unsqueeze(0)
         loss = self.loss_func(masked_error, torch.zeros_like(masked_error))
         self.log("train loss", loss)
         return loss
@@ -53,7 +53,7 @@ class CompetitionAutoencoderNet(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, mask = batch
         x0_hat = self.forward(x, mask)
-        masked_error = (x0_hat - x[:, :1, :, :]) * mask.unsqueeze(0).unsqueeze(0)
+        masked_error = (x0_hat - x[:, :1, :, :]) * mask.unsqueeze(0)
         loss = self.loss_func(masked_error, torch.zeros_like(masked_error))
         self.log("validation loss", loss)
         return loss
