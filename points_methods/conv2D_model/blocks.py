@@ -18,7 +18,7 @@ class PermutationInvariantEncoder(nn.Module):
         self.zdim_line = zdim_line
         self.zdim_col = zdim_col
         self.output_using_mask = output_using_mask
-        self.channel_transformation_layers = list()
+        self.channel_transformation_layers = nn.ModuleList()
         self.channel_transformation_layers.append(
             RepeatedLocalConv2D(
                 in_channels=in_channels,
@@ -53,16 +53,16 @@ class PermutationInvariantEncoder(nn.Module):
             # Local transformation
             x_transformed = layer(x)
             # Adding information from lines and columns
-            masked_x_transformed = x_transformed * mask.unsqueeze(0)
+            masked_x_transformed = x_transformed * mask.unsqueeze(1)
             line_mean = x_transformed.mean(dim=3).unsqueeze(3).expand_as(x_transformed)
             col_mean = x_transformed.mean(dim=2).unsqueeze(2).expand_as(x_transformed)
             masked_line_mean = masked_x_transformed.sum(dim=3) / mask.sum(
                 dim=2
-            ).unsqueeze(0)
+            ).unsqueeze(1)
             masked_line_mean = masked_line_mean.unsqueeze(3).expand_as(x_transformed)
             masked_col_mean = masked_x_transformed.sum(dim=2) / mask.sum(
                 dim=1
-            ).unsqueeze(0)
+            ).unsqueeze(1)
             masked_col_mean = masked_col_mean.unsqueeze(2).expand_as(x_transformed)
             x = torch.concat(
                 [
@@ -77,16 +77,16 @@ class PermutationInvariantEncoder(nn.Module):
         last_layer = self.channel_transformation_layers[-1]
         x_transformed = last_layer(x)
         if self.output_using_mask:
-            masked_x_transformed = x_transformed * mask.unsqueeze(0)
+            masked_x_transformed = x_transformed * mask.unsqueeze(1)
             z_line = masked_x_transformed[:, : self.zdim_line, :, :].sum(
                 dim=3
-            ) / mask.sum(dim=2).unsqueeze(0)
+            ) / mask.sum(dim=2).unsqueeze(1)
             z_col = masked_x_transformed[:, self.zdim_line :, :, :].sum(
                 dim=2
-            ) / mask.sum(dim=1).unsqueeze(0)
+            ) / mask.sum(dim=1).unsqueeze(1)
         else:
-            z_line = x_transformed[:,:self.zdim_line,:,:].mean(dim=3)
-            z_col = x_transformed[:,self.zdim_line:,:,:].mean(dim=2)
+            z_line = x_transformed[:, : self.zdim_line, :, :].mean(dim=3)
+            z_col = x_transformed[:, self.zdim_line :, :, :].mean(dim=2)
         return z_line, z_col
 
 
@@ -132,7 +132,7 @@ class RepeatedLocalConv2D(nn.Module):
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
         self.nb_hidden_layers = nb_hidden_layers
-        self.layers = list()
+        self.layers = nn.ModuleList()
         self.layers.append(
             nn.Conv2d(
                 in_channels=in_channels, out_channels=hidden_channels, kernel_size=1
@@ -172,9 +172,33 @@ class RepeatedLocalConv2D(nn.Module):
     def forward(self, x):
         for i, layer in enumerate(self.layers):
             if (i == 0 and self.in_channels != self.hidden_channels) or (
-                i == self.nb_hidden_layers+1 and self.hidden_channels != self.out_channels
+                i == self.nb_hidden_layers + 1
+                and self.hidden_channels != self.out_channels
             ):
                 x = layer(x)
             else:
                 x = x + layer(x)
         return x
+
+
+class UnsymetricLoss(nn.Module):
+    def __init__(self, delta=1.0):
+        super().__init__()
+        self.delta = delta
+
+    def forward(self, predictions, targets):
+        errors = predictions - targets
+        abs_errors = torch.abs(errors)
+
+        # Huber loss for negative errors
+        quadratic = torch.min(abs_errors, torch.tensor(self.delta))
+        linear = abs_errors - quadratic
+        huber = 0.5 * quadratic**2 + self.delta * linear
+
+        # L2 loss for positive errors
+        l2 = errors**2
+
+        # Combination
+        total_loss = torch.where(errors > 0, l2, huber).mean()
+
+        return total_loss
