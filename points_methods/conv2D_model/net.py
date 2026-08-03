@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from .blocks import (
     PermutationInvariantEncoder,
     PermutationInvariantDecoder,
-    UnsymetricLoss,
+    AsymetricLoss,
 )
 
 
@@ -14,10 +14,9 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         self,
         in_channels_enc,
         hidden_channels_enc,
+        nb_hidden_layers_enc,
         zdim_line,
         zdim_col,
-        nb_channel_transformations_enc,
-        nb_hidden_layers_per_channel_transform_enc,
         hidden_channels_dec,
         nb_hidden_layers_dec,
         huber_loss_delta,
@@ -29,8 +28,7 @@ class CompetitionAutoencoderNet(pl.LightningModule):
             hidden_channels=hidden_channels_enc,
             zdim_line=zdim_line,
             zdim_col=zdim_col,
-            nb_channel_transformations=nb_channel_transformations_enc,
-            nb_hidden_layers_per_channel_transform=nb_hidden_layers_per_channel_transform_enc,
+            nb_hidden_layers=nb_hidden_layers_enc,
         )
         self.decoder = PermutationInvariantDecoder(
             zdim_line=zdim_line,
@@ -38,7 +36,7 @@ class CompetitionAutoencoderNet(pl.LightningModule):
             hidden_channels=hidden_channels_dec,
             nb_hidden_layers=nb_hidden_layers_dec,
         )
-        self.loss_func = UnsymetricLoss(delta=huber_loss_delta)
+        self.loss_func = AsymetricLoss(delta=huber_loss_delta)
 
     def forward(self, x, mask):
         z_line, z_col = self.encoder(x, mask)
@@ -54,15 +52,16 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         err_visible = err * mask_v.unsqueeze(1)
         err_hidden = err * mask_h.unsqueeze(1)
         loss = self.loss_func(err_visible, torch.zeros_like(err_visible))
-        self.log("train loss", loss)
-        med_rec_err = torch.median(torch.abs(err_visible[err_visible != 0])) * 90
-        med_pred_err = torch.median(torch.abs(err_hidden[err_hidden != 0])) * 90
-        rec_bias = torch.mean(err_visible[err_visible != 0]) * 90
-        pred_bias = torch.mean(err_hidden[err_hidden != 0]) * 90
-        self.log("Median reconstruction error (s)", med_rec_err)
-        self.log("Median prediction error (s)", med_pred_err)
-        self.log("Reconstruction bias (s)", rec_bias)
-        self.log("Prediction bias (s)", pred_bias)
+        with torch.no_grad():
+            self.log("train loss", loss)
+            med_rec_err = torch.median(torch.abs(err_visible[err_visible != 0])) * 90
+            med_pred_err = torch.median(torch.abs(err_hidden[err_hidden != 0])) * 90
+            rec_bias = torch.mean(err_visible[err_visible != 0]) * 90
+            pred_bias = torch.mean(err_hidden[err_hidden != 0]) * 90
+            self.log("Median reconstruction error (s)", med_rec_err)
+            self.log("Median prediction error (s)", med_pred_err)
+            self.log("Reconstruction bias (s)", rec_bias)
+            self.log("Prediction bias (s)", pred_bias)
         return loss
 
     def validation_step(self, batch, batch_idx):
