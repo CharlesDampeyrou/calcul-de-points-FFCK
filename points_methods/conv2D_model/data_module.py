@@ -52,7 +52,7 @@ class CompetitionDataModule(LightningDataModule):
             dataset,
             batch_size=self.batch_size,
             shuffle=True,
-            prefetch_factor=1,
+            prefetch_factor=1 if self.num_workers > 0 else None,
             collate_fn=random_crop_batch_to_smallest,
             num_workers=self.num_workers,
         )
