@@ -39,7 +39,14 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         self.loss_func = AsymetricLoss(delta=huber_loss_delta)
 
     def forward(self, x, mask):
-        z_line, z_col = self.encoder(x, mask)
+        # x, mask : scores et masque en espace "réel". La prédiction se fait
+        # en espace log (log1p des scores) : la structure multiplicative
+        # longueur x performance devient additive, ce que le décodeur apprend
+        # beaucoup plus facilement. log1p(0) = 0, donc les cases masquées
+        # (mises à 0 en entrée) restent à 0 après transformation.
+        scores_log = torch.log1p(x[:, :1, :, :])
+        x_in = torch.cat([scores_log, x[:, 1:, :, :]], dim=1)
+        z_line, z_col = self.encoder(x_in, mask)
         return self.decoder(z_line, z_col)
 
     def configure_optimizers(self):
@@ -47,11 +54,17 @@ class CompetitionAutoencoderNet(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, mask_v, mask_h = batch
-        x0_hat = self.forward(x * mask_v.unsqueeze(1), mask_v)
-        err = x0_hat - x[:, :1, :, :]
+        # forward retourne une prédiction en espace log1p des scores
+        pred_log = self.forward(x * mask_v.unsqueeze(1), mask_v)
+        pred_s = torch.expm1(pred_log).clamp_min(0)
+        err = pred_s - x[:, :1, :, :]  # erreurs en unités réelles (secondes x 90)
         err_visible = err * mask_v.unsqueeze(1)
         err_hidden = err * mask_h.unsqueeze(1)
-        loss = self.loss_func(err_visible, torch.zeros_like(err_visible))
+        true_log = torch.log1p(x[:, :1, :, :])
+        err_log_visible = (pred_log - true_log) * mask_v.unsqueeze(1)
+        loss = self.loss_func(
+            err_log_visible, torch.zeros_like(err_log_visible)
+        )
         with torch.no_grad():
             self.log("train loss", loss)
             med_rec_err = torch.median(torch.abs(err_visible[err_visible != 0])) * 90
