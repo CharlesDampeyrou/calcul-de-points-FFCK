@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+from math import cos, pi
 
 from .blocks import (
     PermutationInvariantEncoder,
@@ -20,9 +21,13 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         hidden_channels_dec,
         nb_hidden_layers_dec,
         huber_loss_delta,
+        warmup_epochs,
+        total_epochs,
     ):
         super().__init__()
         self.save_hyperparameters()
+        self.warmup_epochs = warmup_epochs
+        self.total_epochs = total_epochs
         self.encoder = PermutationInvariantEncoder(
             in_channels=in_channels_enc,
             hidden_channels=hidden_channels_enc,
@@ -37,6 +42,9 @@ class CompetitionAutoencoderNet(pl.LightningModule):
             nb_hidden_layers=nb_hidden_layers_dec,
         )
         self.loss_func = AsymetricLoss(delta=huber_loss_delta)
+        #self.loss_func = nn.HuberLoss(delta=huber_loss_delta)
+        self.hidden_errors = list()
+        self.visible_errors = list()
 
     def forward(self, x, mask):
         # x, mask : scores et masque en espace "réel". La prédiction se fait
@@ -50,7 +58,16 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         return self.decoder(z_line, z_col)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters())
+        optimizer = torch.optim.Adam(self.parameters())
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda epoch: min((epoch + 1) / self.warmup_epochs, 0.5 * (1 + cos(pi * epoch / self.total_epochs))))
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch",   # step à chaque époque
+                "frequency": 1,
+            },
+        }
 
     def training_step(self, batch, batch_idx):
         x, mask_v, mask_h = batch
@@ -67,18 +84,8 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         )
         with torch.no_grad():
             self.log("train loss", loss)
-            med_rec_err = torch.median(torch.abs(err_visible[err_visible != 0])) * 90
-            med_pred_err = torch.median(torch.abs(err_hidden[err_hidden != 0])) * 90
-            med_rec_bias = torch.median(err_visible[err_visible != 0]) * 90
-            med_pred_bias = torch.median(err_hidden[err_hidden != 0]) * 90
-            rec_bias = torch.mean(err_visible[err_visible != 0]) * 90
-            pred_bias = torch.mean(err_hidden[err_hidden != 0]) * 90
-            self.log("Median reconstruction error (s)", med_rec_err)
-            self.log("Median prediction error (s)", med_pred_err)
-            self.log("Median reconstruction bias (s)", med_rec_bias)
-            self.log("Median prediction bias (s)", med_pred_bias)
-            self.log("Reconstruction bias (s)", rec_bias)
-            self.log("Prediction bias (s)", pred_bias)
+            self.hidden_errors.append(err_hidden[err_hidden!=0])
+            self.visible_errors.append(err_visible[err_visible!=0])
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -91,3 +98,14 @@ class CompetitionAutoencoderNet(pl.LightningModule):
         # self.log("median prediction error val", median_pred_error)
         # return loss
         pass  # la validation peut être considérée comme faite avec les données cachées à l'entraînement
+
+    def on_train_epoch_end(self):
+        # Calcul de la véritable médiane des erreurs de prédiction
+        errs_hidden = torch.cat(self.hidden_errors) * 90
+        errs_visible = torch.cat(self.visible_errors) * 90
+        self.log("Median prediction error (s)", errs_hidden.median())
+        self.log("Median reconstruction error (s)", errs_visible.median())
+        self.log("Median absolute prediction error (s)", errs_hidden.abs().median())
+        self.log("Median absolute reconstruction error (s)", errs_visible.abs().median())
+        self.hidden_errors.clear()
+        self.visible_errors.clear()
