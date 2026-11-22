@@ -19,7 +19,7 @@ from api.endpoints.competition_infos import ns as competition_infos_namespace
 app = Flask("apiClassementCanoeKayak")
 
 
-blueprint = Blueprint('api', __name__)
+blueprint = Blueprint("api", __name__)
 api.init_app(blueprint)
 api.add_namespace(ranking_namespace)
 api.add_namespace(competitor_infos_namespace)

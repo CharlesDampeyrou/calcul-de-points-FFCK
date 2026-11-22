@@ -16,12 +16,16 @@ from api.restx import api
 from api.serializer import participation, competition
 from data_handling.database_service import DatabaseService
 
-ns = api.namespace('competition_infos', description='Récupération des informations concernant une compétition')
+ns = api.namespace(
+    "competition_infos",
+    description="Récupération des informations concernant une compétition",
+)
 
-@ns.route('/point_computing_details')
+
+@ns.route("/point_computing_details")
 class PointComputingDetails(Resource):
 
-    #@api.marshal_with(competition_metadata)
+    # @api.marshal_with(competition_metadata)
     def get(self):
         """
         Returns the computation details of the competition.
@@ -29,12 +33,12 @@ class PointComputingDetails(Resource):
         db_service = DatabaseService()
         data = request.args
         competition_name = data.get("competitionName")
-        return (db_service.get_point_computing_details(competition_name),
-                200)
+        return (db_service.get_point_computing_details(competition_name), 200)
 
-@ns.route('/participations')
+
+@ns.route("/participations")
 class ParticipationList(Resource):
-    
+
     @api.marshal_list_with(participation)
     def get(self):
         """
@@ -43,13 +47,19 @@ class ParticipationList(Resource):
         db_service = DatabaseService()
         data = request.args
         competition_name = data.get("competitionName")
-        return (list(db_service.get_competition_participations(competition_name,
-                                                               sort_by_score=True)),
-                200)
+        return (
+            list(
+                db_service.get_competition_participations(
+                    competition_name, sort_by_score=True
+                )
+            ),
+            200,
+        )
 
-@ns.route('/competition_list')
+
+@ns.route("/competition_list")
 class CompetitionList(Resource):
-    
+
     @api.marshal_list_with(competition)
     def get(self):
         """
@@ -58,5 +68,4 @@ class CompetitionList(Resource):
         db_service = DatabaseService()
         data = request.args
         year = int(data.get("year"))
-        return (list(db_service.get_year_competitions(year)),
-                200)
+        return (list(db_service.get_year_competitions(year)), 200)

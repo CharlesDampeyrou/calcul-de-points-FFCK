@@ -15,8 +15,7 @@ if __name__ == "__main__":
     database_service = DatabaseService()
     csv_data_service = CsvDataService(database_service)
     db_management_service = DatabaseManagementService()
-    
-    db_management_service.create_indexes() #Insertions plus rapides si les indexes sont déjà créés
+
+    db_management_service.create_indexes()  # Insertions plus rapides si les indexes sont déjà créés
     csv_data_service.save_csv_files_in_database()
     db_management_service.clean_database()
-    

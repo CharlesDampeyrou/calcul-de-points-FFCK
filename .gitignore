@@ -125,3 +125,7 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+lightning_logs/
+checkpoints/local/
+hdf5_data/

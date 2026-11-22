@@ -15,14 +15,16 @@ from api.restx import api
 from api.serializer import value
 from data_handling.database_service import DatabaseService
 
-ns = api.namespace('ranking', description='Classement des compétiteurs')
+ns = api.namespace("ranking", description="Classement des compétiteurs")
 
-@ns.route('/test')
+
+@ns.route("/test")
 class Test(Resource):
     def get(self):
         return "Hello world !"
 
-@ns.route('')
+
+@ns.route("")
 class Ranking(Resource):
 
     @api.marshal_list_with(value)
@@ -37,9 +39,15 @@ class Ranking(Resource):
         category = data.get("category")
         nb_nat_min = int(data.get("nbNatMin"))
         nb_comp_min = int(data.get("nbCompMin"))
-        return (list(db_service.get_ranking(date,
-                                        point_type,
-                                        category,
-                                        nb_nat_min,
-                                        nb_comp_min,)),
-                200)
+        return (
+            list(
+                db_service.get_ranking(
+                    date,
+                    point_type,
+                    category,
+                    nb_nat_min,
+                    nb_comp_min,
+                )
+            ),
+            200,
+        )
