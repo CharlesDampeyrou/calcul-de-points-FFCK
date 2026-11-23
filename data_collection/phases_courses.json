@@ -1,0 +1,479 @@
+{
+ "1 2 finale": {
+  "brut": "1/2 finale",
+  "phase": "demi-finale"
+ },
+ "1ere manche": {
+  "brut": "1ère Manche",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "2eme manche": {
+  "brut": "2ème Manche",
+  "ordre": 0.2,
+  "phase": null
+ },
+ "3eme manche": {
+  "brut": "3ème Manche",
+  "ordre": 0.3,
+  "phase": null
+ },
+ "4eme manche": {
+  "brut": "4ème Manche",
+  "ordre": 0.4,
+  "phase": null
+ },
+ "5eme manche": {
+  "brut": "5ème Manche",
+  "ordre": 0.5,
+  "phase": null
+ },
+ "6eme manche": {
+  "brut": "6ème Manche",
+  "ordre": 0.6,
+  "phase": null
+ },
+ "7eme manche": {
+  "brut": "7ème Manche",
+  "ordre": 0.7,
+  "phase": null
+ },
+ "7eme manche course unique": {
+  "brut": "7ème manche, course unique",
+  "ordre": 0.7,
+  "phase": null
+ },
+ "8eme manche": {
+  "brut": "8ème Manche",
+  "ordre": 0.8,
+  "phase": null
+ },
+ "c2 manche 1": {
+  "brut": "C2 - Manche 1",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "c2 manche 2": {
+  "brut": "C2 - Manche 2",
+  "ordre": 0.2,
+  "phase": null
+ },
+ "cadets": {
+  "brut": "Cadets",
+  "phase": null
+ },
+ "cadets juniors veterans et finale n2 senior": {
+  "brut": " Cadets, Juniors, Vétérans, et Finale N2 Sénior",
+  "phase": null
+ },
+ "cadets juniors veterans finale n2 senior et qualification finale n1": {
+  "brut": "Cadets, Juniors, Vétérans, Finale N2 Sénior et Qualification Finale N1",
+  "phase": null
+ },
+ "challenge bertrand": {
+  "brut": "Challenge Bertrand",
+  "phase": null
+ },
+ "challenge jean francois dugast": {
+  "brut": "Challenge Jean-François Dugast",
+  "phase": null
+ },
+ "challenge matthieu perriguey": {
+  "brut": "Challenge Matthieu Perriguey",
+  "phase": null
+ },
+ "championnat de normandie": {
+  "brut": "Championnat de Normandie",
+  "phase": null
+ },
+ "championnat regional": {
+  "brut": "Championnat régional",
+  "phase": null
+ },
+ "championnat rhone alpes slalom veneon": {
+  "brut": "Championnat Rhône Alpes Slalom - Vénéon",
+  "phase": null
+ },
+ "championnats d alsace": {
+  "brut": "Championnats d'Alsace",
+  "phase": null
+ },
+ "championnats de france cadets": {
+  "brut": "Championnats de France Cadets",
+  "phase": null
+ },
+ "championnats de france cadets juniors veterans finale n2 senior et qualification finale n1": {
+  "brut": "Championnats de France Cadets, Juniors, Vétérans, Finale N2 Sénior et Qualification Finale N1",
+  "phase": null
+ },
+ "championnats de france juniors": {
+  "brut": "Championnats de France Juniors",
+  "phase": null
+ },
+ "championnats de france juniors veterans finale n2 senior": {
+  "brut": "Championnats de France Juniors, Vétérans, Finale N2 Sénior",
+  "phase": null
+ },
+ "championnats de france veterans et finale n2 senior": {
+  "brut": "Championnats de France Vétérans et Finale N2 Sénior",
+  "phase": null
+ },
+ "course 1": {
+  "brut": "Course 1",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "course 1 demi finale": {
+  "brut": "Course 1 - Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course 1 finale": {
+  "brut": "Course 1 | Finale ",
+  "phase": "finale"
+ },
+ "course 1 qualification": {
+  "brut": "Course 1 - Qualification",
+  "phase": "qualification"
+ },
+ "course 2": {
+  "brut": "Course 2",
+  "ordre": 0.2,
+  "phase": null
+ },
+ "course 2 demi finale": {
+  "brut": "Course 2 - Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course 2 finale": {
+  "brut": "Course 2 - Finale",
+  "phase": "finale"
+ },
+ "course 2 qualification": {
+  "brut": "Course 2 - Qualification",
+  "phase": "qualification"
+ },
+ "course 3 demi finale": {
+  "brut": "Course 3 - Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course 3 finale": {
+  "brut": "Course 3 - Finale",
+  "phase": "finale"
+ },
+ "course c j demi finale": {
+  "brut": "Course C/J - Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course c j finale": {
+  "brut": "Course C/J - Finale",
+  "phase": "finale"
+ },
+ "course c j qualification m1": {
+  "brut": "Course C/J - Qualification M1",
+  "phase": "qualification"
+ },
+ "course c j qualification m2": {
+  "brut": "Course C/J - Qualification M2",
+  "phase": null
+ },
+ "course c2 demi finale": {
+  "brut": "Course C2 - Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course c2 finale": {
+  "brut": "Course C2 - Finale",
+  "phase": "finale"
+ },
+ "course c2 qualification m1": {
+  "brut": "Course C2 - Qualification M1",
+  "phase": "qualification"
+ },
+ "course c2 qualification m2": {
+  "brut": "Course C2 - Qualification M2",
+  "phase": null
+ },
+ "course de demi finale": {
+  "brut": "Course de demi-finale",
+  "phase": "demi-finale"
+ },
+ "course de finale": {
+  "brut": "Course de finale",
+  "phase": "finale"
+ },
+ "course de qualification": {
+  "brut": "Course de qualification",
+  "phase": "qualification"
+ },
+ "course individuelle finale": {
+  "brut": "Course individuelle | Finale",
+  "phase": "finale"
+ },
+ "course individuelle qualification": {
+  "brut": "Course individuelle | Qualification",
+  "phase": "qualification"
+ },
+ "course n 1": {
+  "brut": "Course n°1",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "course n 1 1 2 finale": {
+  "brut": "Course n°1 | 1/2 finale",
+  "phase": "demi-finale"
+ },
+ "course n 1 demi finale": {
+  "brut": "Course n°1 | Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course n 1 finale": {
+  "brut": "Course N°1 | Finale",
+  "phase": "finale"
+ },
+ "course n 1 la seu d urgell": {
+  "brut": "Course n°1 - La Seu d'Urgell",
+  "phase": null
+ },
+ "course n 1 manche unique": {
+  "brut": "Course n°1 | Manche unique",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "course n 1 qualification": {
+  "brut": "Course N°1 | Qualification",
+  "phase": "qualification"
+ },
+ "course n 2": {
+  "brut": "Course n°2",
+  "ordre": 0.2,
+  "phase": null
+ },
+ "course n 2 1 2 finale": {
+  "brut": "Course n°2 | 1/2 finale",
+  "phase": "demi-finale"
+ },
+ "course n 2 demi finale": {
+  "brut": "Course n°2 | Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course n 2 finale": {
+  "brut": "Course N°2 | Finale",
+  "phase": "finale"
+ },
+ "course n 2 la seu d urgell": {
+  "brut": "Course n°2 - La Seu d'Urgell",
+  "phase": null
+ },
+ "course n 2 qualification": {
+  "brut": "Course N°2 | Qualification",
+  "phase": "qualification"
+ },
+ "course n 3": {
+  "brut": "Course n°3",
+  "ordre": 0.3,
+  "phase": null
+ },
+ "course n 3 1 2 finale": {
+  "brut": "Course n°3 | 1/2 finale",
+  "phase": "demi-finale"
+ },
+ "course n 3 demi finale": {
+  "brut": "Course n°3 | Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course n 3 finale": {
+  "brut": "Course n°3 | Finale",
+  "phase": "finale"
+ },
+ "course n 3 pau": {
+  "brut": "Course n°3 - Pau",
+  "ordre": 0.3,
+  "phase": null
+ },
+ "course n 3 qualification": {
+  "brut": "Course n°3 | Qualification",
+  "phase": "qualification"
+ },
+ "course n 4": {
+  "brut": "Course n°4",
+  "ordre": 0.4,
+  "phase": null
+ },
+ "course n 4 demi finale": {
+  "brut": "Course n°4 | Demi-finale",
+  "phase": "demi-finale"
+ },
+ "course n 4 finale": {
+  "brut": "Course n°4 | Finale",
+  "phase": "finale"
+ },
+ "course n 4 pau": {
+  "brut": "Course n°4 - Pau",
+  "ordre": 0.4,
+  "phase": null
+ },
+ "course unique": {
+  "brut": "Course unique",
+  "phase": null
+ },
+ "demi": {
+  "brut": "Demi",
+  "phase": "demi-finale"
+ },
+ "demi finale": {
+  "brut": "Demi-finale",
+  "phase": "demi-finale"
+ },
+ "demi finale bas du bassin": {
+  "brut": "Demi-finale (bas du bassin)",
+  "phase": "demi-finale"
+ },
+ "demi finale haut du bassin": {
+  "brut": "Demi-finale (haut du bassin)",
+  "phase": "demi-finale"
+ },
+ "demi finale n1": {
+  "brut": "Demi-finale N1",
+  "phase": "demi-finale"
+ },
+ "demi finale pour calcul coupe de france": {
+  "brut": "Demi-finale pour calcul Coupe de France",
+  "phase": "demi-finale"
+ },
+ "festikayak": {
+  "brut": "FestiKayaK",
+  "phase": null
+ },
+ "finale": {
+  "brut": "FINALE ",
+  "phase": "finale"
+ },
+ "finale bas du bassin": {
+  "brut": "Finale (bas du bassin)",
+  "phase": "finale"
+ },
+ "finale c1h c1d k1h": {
+  "brut": "Finale C1H-C1D-K1H",
+  "phase": "finale"
+ },
+ "finale de la coupe de lorraine": {
+  "brut": "Finale de la coupe de Lorraine",
+  "phase": null
+ },
+ "finale haut du bassin": {
+  "brut": "Finale (haut du bassin)",
+  "phase": "finale"
+ },
+ "finale k1d c2h": {
+  "brut": "Finale K1D-C2H",
+  "phase": "finale"
+ },
+ "finale n1": {
+  "brut": "Finale N1",
+  "phase": "finale"
+ },
+ "finale n2 seniors": {
+  "brut": "Finale N2 Séniors",
+  "phase": null
+ },
+ "finale pour classement coupe de france": {
+  "brut": "Finale pour classement Coupe de France",
+  "phase": "finale"
+ },
+ "finales": {
+  "brut": "Finales",
+  "phase": "finale"
+ },
+ "individuels finale": {
+  "brut": "Individuels - Finale",
+  "phase": "finale"
+ },
+ "individuels qualification manche 1": {
+  "brut": "Individuels - Qualification - Manche 1",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "individuels qualification manche 2": {
+  "brut": "Individuels - Qualification - Manche 2",
+  "ordre": 0.2,
+  "phase": null
+ },
+ "juniors et veterans": {
+  "brut": "Juniors et Vétérans",
+  "phase": null
+ },
+ "manche 1 finale": {
+  "brut": "Manche 1 - Finale",
+  "phase": "finale"
+ },
+ "manche 1 qualification": {
+  "brut": "Manche 1 - Qualification",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "manche 2 finale": {
+  "brut": "Manche 2 - Finale",
+  "phase": "finale"
+ },
+ "manche 2 qualification": {
+  "brut": "Manche 2 - Qualification",
+  "phase": "qualification"
+ },
+ "manche unique": {
+  "brut": "Manche unique",
+  "phase": null
+ },
+ "masters manche 1": {
+  "brut": "Masters - Manche 1",
+  "ordre": 0.1,
+  "phase": null
+ },
+ "masters manche 2": {
+  "brut": "Masters - Manche 2",
+  "ordre": 0.2,
+  "phase": null
+ },
+ "open val de sarre": {
+  "brut": "Open Val de Sarre",
+  "phase": null
+ },
+ "qualification": {
+  "brut": "Qualification",
+  "phase": "qualification"
+ },
+ "qualification c1h c1d k1h": {
+  "brut": "Qualification C1H-C1D-K1H",
+  "phase": "qualification"
+ },
+ "qualification k1d c2h": {
+  "brut": "Qualification K1D-C2H",
+  "phase": "qualification"
+ },
+ "qualification manche 1": {
+  "brut": "Qualification Manche 1",
+  "phase": "qualification"
+ },
+ "qualification manche 2": {
+  "brut": "Qualification - Manche 2",
+  "phase": "qualification"
+ },
+ "qualification manche unique": {
+  "brut": "Qualification - Manche unique",
+  "phase": "qualification"
+ },
+ "qualifications": {
+  "brut": "Qualifications",
+  "phase": "qualification"
+ },
+ "regional ussel": {
+  "brut": "Régional Ussel",
+  "phase": null
+ },
+ "slalom regional du veneon": {
+  "brut": "Slalom Régional du Vénéon",
+  "phase": null
+ },
+ "veterans": {
+  "brut": "Vétérans",
+  "phase": null
+ }
+}
