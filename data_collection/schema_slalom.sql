@@ -87,11 +87,12 @@ CREATE TABLE course (
 
 -- Paramètres de la méthode de calcul FFCK propres à chaque course.
 -- (avant v2 : colonnes temps_base / coefficient de COURSE)
--- Une autre méthode de classement aura sa propre table course_methode_<nom>.
+-- Un seul champ details (JSON sérialisé), cohérent avec les autres méthodes
+-- de points (course_methode_<nom>) :
+--   {"tpsBase": <baseTime>, "coefficientCourse": <coefficient>}
 CREATE TABLE course_methode_ffck (
     course_id   INTEGER PRIMARY KEY REFERENCES course(id) ON DELETE CASCADE,
-    temps_base  REAL,     -- "baseTime", null si non calculée
-    coefficient REAL      -- null si non calculée
+    details     TEXT      -- JSON sérialisé, ex {"tpsBase": 76.79, "coefficientCourse": 0.999}
 );
 
 -- ------------------------------------------------------------
@@ -108,19 +109,16 @@ CREATE TABLE bateau (
     surclassement     INTEGER                -- -1, 0 ou 1 depuis la fiche
 );
 
--- Composition d'équipage (1 ligne par membre, position 1..2)
+-- Composition d'équipage (1 ligne par membre, position 1..2).
+-- club_id = club du membre pour ce bateau : depuis quelques années, un C2
+-- peut réunir deux membres de clubs différents (équipages mixtes), d'où le
+-- club porté par le membre (bateau_competiteur.club_id) et non par le bateau.
 CREATE TABLE bateau_competiteur (
     bateau_id      INTEGER NOT NULL REFERENCES bateau(id),
     competiteur_id INTEGER NOT NULL REFERENCES competiteur(id),
     position       INTEGER NOT NULL,
+    club_id        INTEGER REFERENCES club(id),
     PRIMARY KEY (bateau_id, competiteur_id)
-);
-
--- Un C2 peut représenter deux clubs différents
-CREATE TABLE bateau_club (
-    bateau_id INTEGER NOT NULL REFERENCES bateau(id),
-    club_id   INTEGER NOT NULL REFERENCES club(id),
-    PRIMARY KEY (bateau_id, club_id)
 );
 
 -- ------------------------------------------------------------

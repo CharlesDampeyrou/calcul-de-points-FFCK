@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Collecte des compétitions et de leurs courses/resultats."""
 
+import json
 import sqlite3
 import sys
 import time
@@ -62,13 +63,21 @@ def enregistrer_course(cur, conn, ev, race):
     )
     course_id = cur.lastrowid
 
-    # v2 : baseTime / coefficient -> table dédiée à la méthode FFCK
-    # (avant : colonnes temps_base / coefficient de COURSE).
+    # baseTime / coefficient -> table dédiée à la méthode FFCK, en JSON dans
+    # le champ details (cohérent avec course_methode_<nom> des autres méthodes) :
+    # {"tpsBase": ..., "coefficientCourse": ...}
     if race.get("baseTime") is not None or race.get("coefficient") is not None:
+        details = json.dumps(
+            {
+                "tpsBase": race.get("baseTime"),
+                "coefficientCourse": race.get("coefficient"),
+            },
+            ensure_ascii=False,
+        )
         cur.execute(
-            "INSERT OR REPLACE INTO course_methode_ffck (course_id, temps_base, coefficient) "
-            "VALUES (?, ?, ?)",
-            (course_id, race.get("baseTime"), race.get("coefficient")),
+            "INSERT OR REPLACE INTO course_methode_ffck (course_id, details) "
+            "VALUES (?, ?)",
+            (course_id, details),
         )
 
     detail = api.get_json(f"{config.BASE}/ffck/race/{race_id_api}")
@@ -96,16 +105,21 @@ def enregistrer_course(cur, conn, ev, race):
             cur, conn, boat_id_api, boat.get("label"), type_code
         )
 
-        # clubs du résultat (source course : parfois plus complète que la fiche)
+        # Clubs du résultat (source course : parfois plus complète que la fiche).
+        # Le club est porté par chaque membre (bateau_competiteur.club_id, renseigné
+        # depuis la fiche bateau dans bateaux.py). Ici on se contente de créer les
+        # clubs dans le référentiel ; si le résultat n'indique qu'UN seul club, on
+        # complète les membres du bateau qui n'ont pas encore de club.
         clubs = res.get("clubs")
         if isinstance(clubs, list):
-            for club in clubs:
-                if isinstance(club, dict):
-                    club_id = referentiel.ref_club(cur, club)
-                    cur.execute(
-                        "INSERT OR IGNORE INTO bateau_club (bateau_id, club_id) VALUES (?, ?)",
-                        (bateau_id, club_id),
-                    )
+            clubs = [c for c in clubs if isinstance(c, dict)]
+            club_ids = [referentiel.ref_club(cur, club) for club in clubs]
+            if len(club_ids) == 1:
+                cur.execute(
+                    "UPDATE bateau_competiteur SET club_id = ? "
+                    "WHERE bateau_id = ? AND club_id IS NULL",
+                    (club_ids[0], bateau_id),
+                )
 
         cat_code = (
             res.get("category") or None

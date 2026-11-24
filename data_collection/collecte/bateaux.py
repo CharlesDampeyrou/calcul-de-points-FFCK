@@ -79,29 +79,20 @@ def enregistrer_bateau(cur, conn, boat_id_api, label, type_code):
         # ref_competiteur évite les doublons quand l'API ne fournit pas d'id :
         # match par (nom, prenom) exact puis normalisé avant création.
         competiteur_id = referentiel.ref_competiteur(cur, pers.get("id"), nom, prenom)
+        # Club du membre pour ce bateau : un C2 peut réunir deux membres de
+        # clubs différents (équipages mixtes) -> club_id sur la ligne
+        # bateau_competiteur, pas de table bateau_club.
+        club_id = None
+        if pers.get("clubId"):
+            club_id = referentiel.ref_club(
+                cur,
+                {"clubId": pers.get("clubId"), "clubName": pers.get("clubName")},
+            )
         cur.execute(
             "INSERT OR IGNORE INTO bateau_competiteur "
-            "(bateau_id, competiteur_id, position) VALUES (?, ?, ?)",
-            (bateau_id, competiteur_id, pos),
+            "(bateau_id, competiteur_id, position, club_id) VALUES (?, ?, ?, ?)",
+            (bateau_id, competiteur_id, pos, club_id),
         )
-        if pers.get("clubId"):
-            cur.execute("SELECT id FROM club WHERE id_api = ?", (pers.get("clubId"),))
-            cl = cur.fetchone()
-            club_id = cl[0] if cl else None
-            if club_id is None:
-                cur.execute(
-                    "INSERT OR IGNORE INTO club (id_api) VALUES (?)",
-                    (pers.get("clubId"),),
-                )
-                cur.execute(
-                    "SELECT id FROM club WHERE id_api = ?", (pers.get("clubId"),)
-                )
-                club_id = cur.fetchone()[0]
-            cur.execute(
-                "INSERT OR IGNORE INTO bateau_club (bateau_id, club_id) "
-                "VALUES (?, ?)",
-                (bateau_id, club_id),
-            )
     # PAS de commit ici : la transaction est validée par enregistrer_course
     # (sinon une erreur en cours de course laisserait la course en base
     # sans ses résultats).

@@ -8,8 +8,7 @@ erDiagram
     BATEAU ||--o{ RESULTAT : " engage "
     COMPETITEUR ||--o{ BATEAU_COMPETITEUR : " membre "
     BATEAU ||--o{ BATEAU_COMPETITEUR : " equipe "
-    BATEAU ||--o{ BATEAU_CLUB : " represente "
-    CLUB ||--o{ BATEAU_CLUB : " accueille "
+    CLUB ||--o{ BATEAU_COMPETITEUR : " club du membre "
     TYPE_BATEAU ||--o{ RESULTAT : " type "
     TYPE_BATEAU ||--o{ BATEAU : " type "
     RESULTAT ||--|| RESULTAT_METHODE_FFCK : " points méthode FFCK "
@@ -40,8 +39,7 @@ erDiagram
     }
     COURSE_METHODE_FFCK {
         int course_id PK, FK " 1 ligne par course "
-        decimal temps_base " baseTime de la méthode FFCK, null si non calculée "
-        decimal coefficient " null si non calculée "
+        string details " JSON sérialisé, ex. tpsBase + coefficientCourse ; même forme que course_methode_<nom> des autres méthodes "
     }
     BATEAU {
         int id PK
@@ -62,15 +60,12 @@ erDiagram
         int bateau_id PK, FK
         int competiteur_id PK, FK
         int position " 1 ou 2 selon l'ordre dans le libellé "
+        int club_id FK " club du membre pour ce bateau ; C2 mixte = clubs différents "
     }
     CLUB {
         int id PK
         string id_api UK " ex 080003 "
         string nom " parfois chaîne vide "
-    }
-    BATEAU_CLUB {
-        int bateau_id PK, FK
-        int club_id PK, FK
     }
     TYPE_BATEAU {
         int id PK
@@ -178,10 +173,10 @@ Aucune modification du schéma de base n'est nécessaire. Le pattern (voir `exem
 ## Évolutions du format prises en compte
 
 - **La course est l'unité de résultats, pas la compétition.** Une compétition contient 1 à 4 courses (manches) distinctes, chacune avec son propre classement.
-- **Le bateau, pas le compétiteur, participe.** Les équipes C2 ont deux membres (le champ `boat.label` les sépare par un retour à la ligne) et peuvent représenter **deux clubs différents**, d'où les tables de liaison `BATEAU_COMPETITEUR` et `BATEAU_CLUB`.
+- **Le bateau, pas le compétiteur, participe.** Les équipes C2 ont deux membres (le champ `boat.label` les sépare par un retour à la ligne) et peuvent représenter **deux clubs différents**, d'où le club porté par chaque membre (`BATEAU_COMPETITEUR.club_id`).
 - **Année de naissance** : disponible sur la fiche de chaque bateau (endpoint `/ffck/boats/{id}`, champ `slalom.year`), portée par le bateau ; sur un C2 les deux équipiers partagent la même valeur.
 - **Catégories hétérogènes** : codes historiques à une lettre (J, C, S, V...) jusqu'au début des années 2020, puis U12/U15/U18/M35 depuis 2021. Le code brut est conservé dans `resultat.categorie_code` (texte libre) ; la catégorie d'âge se recalcule depuis l'année de naissance.
-- **Points** : calculés par course selon la méthode FFCK (`baseTime`, `coefficient` → `course_methode_ffck` ; identifiant de méthode brut → `course.points_calculation_method_id`, renseigné seulement depuis 2025). Les `points`/`valeur` de chaque résultat sont stockés dans `resultat_methode_ffck` et peuvent valoir `-1`.
+- **Points** : calculés par course selon la méthode FFCK (`baseTime`, `coefficient` → JSON `details` de `course_methode_ffck` ; identifiant de méthode brut → `course.points_calculation_method_id`, renseigné seulement depuis 2025). Les `points`/`valeur` de chaque résultat sont stockés dans `resultat_methode_ffck` et peuvent valoir `-1`.
 - **Manches** : 1 ou 2 manches par course selon l'époque, d'où la table `MANCHE` séparée de `RESULTAT`.
 - **Pénalités** : `penaltiesDetail` est un tableau indexé par porte ; il est rattaché à la manche.
 - **Miscibilité** : `phase` (A/B, courses à phases), `statut` (OK/DNS/DNF/DSQ), et le type `INV` (invités, hors classement, `countInRanking` à faux) sont conservés en colonnes dédiées.

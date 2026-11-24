@@ -34,6 +34,8 @@ def main():
 
     if args.start is not None:
         start = date(args.start, 1, 1)
+    else:
+        start = None
     nb_nat_min = args.nb_nat_min
     nb_comp_min = args.nb_comp_min
     point_type = args.point_type
