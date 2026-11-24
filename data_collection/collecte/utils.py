@@ -26,5 +26,10 @@ def normaliser(texte, separateurs_sup="", tout_non_alnum=True):
 
 
 def date_courte(iso):
-    """'2026-11-15T00:00:00.000Z' -> '2026-11-15' ; None sinon."""
-    return (iso or "")[:10] or None
+    """'2026-11-15T00:00:00.000Z' -> '2026-11-15' ; None sinon.
+
+    Le placeholder '2030-01-01T00:00:00.000Z' renvoyé par l'API pour les vieux
+    events sans startDate est traité comme une date absente (None).
+    """
+    d = (iso or "")[:10] or None
+    return None if d == "2030-01-01" else d

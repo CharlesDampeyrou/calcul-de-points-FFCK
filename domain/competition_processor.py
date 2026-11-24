@@ -4,6 +4,7 @@ Created on Fri Feb 12 15:10:48 2021
 
 @author: charl
 """
+
 import logging
 from datetime import datetime
 
@@ -44,31 +45,34 @@ class CompetitionProcessor:
                 str(max(competition_dates)),
             )
         )
-        phases = ["qualif", "demi", "finale", ""]
+        phases = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 3]
         for competition_date in competition_dates:
             self.logger.info(
                 "Calcul des points pour les compétitions du %s." % str(competition_date)
             )
             for phase in phases:
-                competition_names = list(
-                    self.db_service.get_competition_list(competition_date, phase=phase)
+                course_ids = list(
+                    self.db_service.get_courses_on_date_phase(
+                        competition_date, phase=phase
+                    )
                 )
-                if (
-                    competition_names
-                ):  # La méthode n'est pas appelée si la liste est vide
+                if course_ids:  # La méthode n'est pas appelée si la liste est vide
                     self.point_computer.compute_and_save_points(
-                        competition_names=competition_names,
+                        course_ids=course_ids,
                         phase=phase,
                         competition_date=competition_date,
                         force_value_computing=True,
                     )
 
-    def update_point_type(self, default_starting_date=datetime(2012, 1, 1)):
-        self.logger.info("Mise à jour des points %s" % self.point_computer.point_type)
-        update_starting_date = self.db_service.get_last_points_date(
-            self.point_computer.point_type
+    def update_point_type(self, starting_date=None):
+        if starting_date is None:
+            starting_date = self.db_service.get_point_type_computing_start_date(
+                self.point_computer.point_type
+            )
+            if starting_date is None:  # pas de courses à calculer
+                return
+            starting_date = datetime.fromisoformat(starting_date)
+        self.db_service.remove_point_type_after_date(
+            self.point_computer.point_type, starting_date
         )
-        if update_starting_date is None:
-            update_starting_date = default_starting_date
-            self.initialize_point_type(update_starting_date)
-        self.compute_point_type(update_starting_date)
+        self.compute_point_type(starting_date)

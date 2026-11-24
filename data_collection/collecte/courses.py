@@ -17,6 +17,13 @@ def enregistrer_course(cur, conn, ev, race):
         print(f"    Course {race_id_api} déjà en base, ignorée.")
         return 0
 
+    # course.date est obligatoire : une course sans date (ou avec le
+    # placeholder API 2030-01-01, voir date_courte) n'est pas enregistrée.
+    date_course = date_courte(race.get("date"))
+    if date_course is None:
+        print(f"    Course {race_id_api} ({race.get('name')!r}) : pas de date, ignorée.")
+        return 0
+
     # v2 : identifiant de méthode en simple champ texte de COURSE.
     # L'API l'appelle "pointsCalculationMethodId" depuis 2025 (UUID) et
     # "officialPointsCalculationMethod" avant (ex "2025") : on prend l'un ou l'autre.
@@ -41,7 +48,7 @@ def enregistrer_course(cur, conn, ev, race):
             race_id_api,
             str(ev.get("id")),
             nom_course,
-            date_courte(race.get("date")),
+            date_course,
             race.get("gateNumber"),
             (
                 1
@@ -100,15 +107,12 @@ def enregistrer_course(cur, conn, ev, race):
                         (bateau_id, club_id),
                     )
 
-        # v2 : plus de table CATEGORIE ; le code brut est stocké tel quel.
         cat_code = (
             res.get("category") or None
         )  # or None pour le cas où la catégorie est "" au lieu de null
         if type_code:
             referentiel.ref_type(cur, type_code)
 
-        # v2 : plus de colonnes rang / points / valeur sur RESULTAT.
-        # rang se recalcule à la volée ; points / valeur -> RESULTAT_METHODE_FFCK.
         # INSERT OR IGNORE : un _id déjà vu (dans une autre course) ne doit pas
         # faire échouer toute la course.
         res_id_api = res.get("_id")

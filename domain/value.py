@@ -4,6 +4,7 @@ Created on Fri Feb  5 10:59:35 2021
 
 @author: charl
 """
+
 import logging
 
 import numpy as np
@@ -29,7 +30,10 @@ class BasicValue:
     def __lt__(self, autre_val):
         if self.nb_comp == autre_val.nb_comp:
             if self.nb_nat == autre_val.nb_nat:
-                return self.moyenne < autre_val.moyenne
+                if self.moyenne is None or autre_val.moyenne is None:
+                    return self.moyenne is not None
+                else:
+                    return self.moyenne < autre_val.moyenne
             else:
                 return self.nb_nat > autre_val.nb_nat
         else:
@@ -38,7 +42,10 @@ class BasicValue:
     def __le__(self, autre_val):
         if self.nb_comp == autre_val.nb_comp:
             if self.nb_nat == autre_val.nb_nat:
-                return self.moyenne <= autre_val.moyenne
+                if self.moyenne is None or autre_val.moyenne is None:
+                    return autre_val.moyenne is None
+                else:
+                    return self.moyenne <= autre_val.moyenne
             else:
                 return self.nb_nat > autre_val.nb_nat
         else:
@@ -74,33 +81,22 @@ def ValueMaker(nb_nat_min, nb_comp_min, point_type, value_type):
             self.nb_comp_min = nb_comp_min
             self.logger = logging.getLogger("Value")
 
+        @staticmethod
         def get_value_from_participations(participations):
-            point_type = Value.POINT_TYPE
-            comp_reg_list = list()
-            comp_nat_list = list()
-            for participation in participations:
-                if point_type not in participation["pointTypes"]:
-                    continue
-                if participation["level"] == "Régional":
-                    comp_reg_list.append(participation)
-                else:
-                    comp_nat_list.append(participation)
-            if len(comp_reg_list) + len(comp_nat_list) == 0:
-                return Value(
-                    1000, 0, 0
-                )  # convention si le compétiteur n'a pas de course
-            nb_comp = min(len(comp_nat_list) + len(comp_reg_list), Value.NB_COMP_MIN)
-            nb_nat = min(len(comp_nat_list), Value.NB_NAT_MIN)
-            comp_nat_list.sort(key=lambda x: x["points"][point_type])
-            points_val = list()
-            for i in range(nb_nat):
-                points_val.append(comp_nat_list[0]["points"][point_type])
-                comp_nat_list.pop(0)
-            comp_list = comp_nat_list + comp_reg_list
-            comp_list.sort(key=lambda x: x["points"][point_type])
-            for i in range(nb_comp - nb_nat):
-                points_val.append(comp_list[i]["points"][point_type])
-            moyenne = np.array(points_val).mean()
+            """Renvoit une Valeur à partir d'une liste de participations sous la forme de tuples (points, niveau)"""
+            participations = list(participations)
+            points_reg = [p[0] for p in participations if p[1] == 1]
+            points_nat = [p[0] for p in participations if p[1] != 1]
+            if len(points_reg) + len(points_nat) == 0:
+                return Value(None, 0, 0)
+            nb_comp = min(len(points_nat) + len(points_reg), Value.NB_COMP_MIN)
+            nb_nat = min(len(points_nat), Value.NB_NAT_MIN)
+            points_nat.sort()
+            points_retenus = (
+                points_nat[:nb_nat]
+                + sorted(points_nat[nb_nat:] + points_reg)[: nb_comp - nb_nat]
+            )
+            moyenne = np.array(points_retenus).mean()
             return Value(moyenne, nb_nat, nb_comp)
 
     return Value

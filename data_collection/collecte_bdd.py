@@ -16,6 +16,11 @@ package ./collecte/ :
   courses.py       compétitions, courses, résultats, manches, pénalités
   correction_c2.py correction des noms d'équipage des C2 (--correction-noms-c2)
   revue_phases.py  revue interactive des phases (--revoir-phases)
+  nettoyage_categories.py  suppression des résultats dont le type de bateau
+                           n'est pas autorisé (post-traitement systématique)
+  nettoyage_doublons.py    suppression des doublons (course_id, bateau_id) :
+                           garde le meilleur score_scratch (post-traitement
+                           systématique)
 
 Source : API JSON du site https://slalom.ffck.org (application Vue.js).
 Endpoints utilisés :
@@ -32,8 +37,10 @@ Utilisation :
 Relancez le même script après une nouvelle saison : les données déjà
 présentes sont ignorées (INSERT OR IGNORE).
 
-Pipeline : collecte -> [--correction-noms-c2] -> [--revoir-phases].
---dry-run ne s'applique qu'aux post-traitements (pas à la collecte).
+Pipeline : collecte -> nettoyage des catégories -> nettoyage des doublons
+-> [--correction-noms-c2] -> [--revoir-phases].
+--dry-run ne s'applique qu'aux post-traitements, nettoyage des catégories inclus
+(pas à la collecte).
 
 Aucune bibliothèque externe requise (sqlite3, urllib, json inclus).
 Le schéma des tables est créé par schema_slalom.sql, exécuté
@@ -77,6 +84,8 @@ import sqlite3
 
 from collecte import config, courses, phases, revue_phases, team_events
 from collecte.correction_c2 import corriger_noms_c2
+from collecte.nettoyage_categories import nettoyer_categories
+from collecte.nettoyage_doublons import nettoyer_doublons
 
 
 def main():
@@ -184,7 +193,15 @@ def main():
         print(f"{table}: {cur.fetchone()[0]} lignes")
     conn.close()
 
-    # post-traitements (chacun ouvre sa propre connexion à la base)
+    # post-traitement systématique : nettoyage des catégories non autorisées
+    print("\n=== Nettoyage des catégories ===")
+    nettoyer_categories(db=args.db, dry_run=args.dry_run, verbose=args.verbose)
+
+    # post-traitement systématique : suppression des doublons (course_id, bateau_id)
+    print("\n=== Nettoyage des doublons ===")
+    nettoyer_doublons(db=args.db, dry_run=args.dry_run, verbose=args.verbose)
+
+    # post-traitements optionnels (chacun ouvre sa propre connexion à la base)
     if args.correction_noms_c2:
         print("\n=== Correction des noms C2 ===")
         corriger_noms_c2(

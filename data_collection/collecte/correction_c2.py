@@ -31,7 +31,7 @@ import re
 import sqlite3
 import sys
 
-from . import config
+from . import config, referentiel
 from .utils import normaliser
 
 RE_DATE_FICHIER = re.compile(r"^(\d{4}-\d{2}-\d{2})")
@@ -172,21 +172,11 @@ def parser_nom_complet(nom_complet):
 
 
 def trouver_ou_creer_competiteur(cur, prenom, nom):
-    if nom:
-        cur.execute("SELECT id FROM competiteur WHERE nom = ? AND prenom IS ?",
-                    (nom, prenom))
-        row = cur.fetchone()
-        if row:
-            return row[0]
-        # repli sur comparaison normalisée
-        cur.execute("SELECT id, nom, prenom FROM competiteur WHERE nom = ?", (nom,))
-        for rid, rnom, rprenom in cur.fetchall():
-            if normaliser_csv(rnom) == normaliser_csv(nom) and normaliser_csv(rprenom or "") == normaliser_csv(prenom or ""):
-                return rid
-        cur.execute("INSERT INTO competiteur (id_api, nom, prenom) VALUES (NULL, ?, ?)",
-                    (nom, prenom))
-        return cur.lastrowid
-    return None
+    # Pas d'id_api côté CSV : matching par nom (exact puis normalisé) via le
+    # référentiel, pour ne pas créer de doublon avec un compétiteur existant.
+    if not nom:
+        return None
+    return referentiel.ref_competiteur(cur, None, nom, prenom)
 
 
 def corriger_noms_c2(db, csv_dir=None, dry_run=False, verbose=False):

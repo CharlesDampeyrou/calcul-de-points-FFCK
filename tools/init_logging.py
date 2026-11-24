@@ -2,6 +2,7 @@
 """
 This module defines helper classes for logging initialisation
 """
+
 import logging.config
 from pathlib import Path
 
@@ -23,7 +24,7 @@ def load_logging_configuration(
             logging.config.dictConfig(logging_config)
         # fileConfig(logging_config_file, disable_existing_loggers=False)
     except Exception as err:
-        print("logger not initialized - file {0}".format(logging_config_file))
+        print("logger not initialized - file {0}".format(logging_config_file_name))
         message = "Logging initialisation failed - file:%s reason:%s"
-        raise Exception(message, logging_config_file, str(err))
+        raise Exception(message, logging_config_file_name, str(err))
     print("====== logging configuration loaded from {0}".format(logging_config_file))

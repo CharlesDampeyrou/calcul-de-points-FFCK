@@ -1,8 +1,4 @@
-# Schéma de base de données : classement slalom (FFCK) — v2
-
-Schéma v2, fondé sur l'échantillonnage d'une course tous les 2 ans de 2001 à 2025 via l'API `slalom.ffck.org/api`. Les évolutions de format observées y sont intégrées.
-
-**Principe directeur de la v2** : séparer les **données brutes** (ce que mesure l'API : temps, pénalités, statuts) des **données calculées par une méthode de classement**. La méthode FFCK (points fédéraux) n'est qu'une méthode parmi d'autres : ses paramètres et ses résultats ont leurs propres tables (`COURSE_METHODE_FFCK`, `RESULTAT_METHODE_FFCK`), et tester une autre méthode se fait en créant de nouvelles tables dédiées, **sans modifier le reste du schéma** (voir `exemple_methode_test.py`).
+# Schéma de base de données : classement slalom (FFCK)
 
 ```mermaid
 erDiagram
@@ -115,17 +111,6 @@ erDiagram
         int valeur " 0, 2 ou 50 "
     }
 ```
-
-## Changements v1 → v2
-
-| Élément v1 | v2 | Pourquoi |
-|---|---|---|
-| `COURSE.temps_base`, `COURSE.coefficient` | `COURSE_METHODE_FFCK(course_id, temps_base, coefficient)` | ce sont des **paramètres de la méthode FFCK**, pas des données brutes de la course |
-| `COURSE.methode_points_id` (FK vers `METHODE_POINTS`) | `COURSE.points_calculation_method_id` (texte brut) | simple identifiant API, pas besoin d'une table de référence |
-| table `METHODE_POINTS` | supprimée | idem |
-| `RESULTAT.points`, `RESULTAT.valeur` | `RESULTAT_METHODE_FFCK(resultat_id, points, valeur)` | ce sont des **résultats calculés par la méthode FFCK** |
-| `RESULTAT.rang` | supprimé | recalculable à la volée (voir ci-dessous) |
-| table `CATEGORIE` + `RESULTAT.categorie_code` (FK) | `RESULTAT.categorie_code` en texte libre, sans référentiel | la catégorie d'âge change avec les années ; elle se recalcule depuis `bateau.annee_naissance` + l'année de la compétition |
 
 ## Recalculer rang et catégorie d'âge
 

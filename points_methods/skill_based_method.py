@@ -6,7 +6,7 @@ Created on Sun Mar 28 17:50:42 2021
 """
 
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pandas as pd
 
@@ -33,7 +33,7 @@ class PointsComputer:
         self,
         point_type,
         value_accessor,
-        database_service,
+        db_service,
         table_competition_validity_period=timedelta(days=365),
     ):
         self.coef_inter_cat = {
@@ -48,62 +48,67 @@ class PointsComputer:
         self.table_competition_validity_period = table_competition_validity_period
         self.point_type = point_type
         self.value_accessor = value_accessor
-        self.database_service = database_service
+        self.db_service = db_service
         self.logger = logging.getLogger("points_methods.skill_based_method")
 
     def initialize(self, **kwargs):
         pass  # Pas d'initialisation nécessaire
 
-    def compute_and_save_points(self, **kwargs):
-        competition_names = kwargs["competition_names"]
-        competition_date = kwargs["competition_date"]
-        phase = kwargs["phase"]
-        force_value_computing = kwargs.get("force_value_computing")
+    def compute_and_save_points(
+        self, course_ids, phase, competition_date, force_value_computing, **kwargs
+    ):
         scores_df, participations_df = self.create_dataframes(competition_date, phase)
-        (competitions_vector, skills_vector) = estimate_tensorial_product(
+        competitions_vector, skills_vector = estimate_tensorial_product(
             scores_df, participations_df
         )
-        if force_value_computing:
-            for competition_name in competition_names:
-                self.value_accessor.compute_and_save_competition_values(
-                    competition_name, phase
+        for course_id in course_ids:
+            participations = {
+                boat_id: {
+                    "cat": type_code,
+                    "score": score_scratch,
+                    "level": level,
+                    "phase": phase,
+                    "finale_ab": finale_ab,
+                }
+                for boat_id, type_code, score_scratch, level, phase, finale_ab in self.db_service.get_boat_infos_on_course(
+                    course_id
                 )
-        for competition_name in competition_names:
-            participations = self.database_service.get_competition_participations(
-                competition_name
+                if score_scratch is not None
+            }
+            self.logger.info(f"Calcul des points de la course id {course_id}")
+            course_infos = self.compute_points(
+                course_id, participations, competitions_vector, skills_vector
             )
-            try:
-                result, point_computing_details = self.compute_points(
-                    participations, competitions_vector, skills_vector
+            for boat_id in participations:
+                if force_value_computing:
+                    moyenne = self.value_accessor.get_value(
+                        boat_id, competition_date, phase - 0.1
+                    ).moyenne
+                else:
+                    moyenne = None
+                self.db_service.save_resultat_methode(
+                    boat_id,
+                    course_id,
+                    self.value_accessor.points_name,
+                    participations[boat_id]["points"],
+                    moyenne,
                 )
-            except ImpossiblePointsComputingException as e:
-                msg = "Impossible de calculer les points de la competition %s, raison : %s, erreur : %s"
-                self.logger.error(msg % (competition_name, str(e), str(type(e))))
-            else:
-                self.database_service.save_competition_points(
-                    competition_name, self.point_type, result
-                )
-                self.database_service.save_point_computing_details(
-                    point_computing_details
-                )
+            self.db_service.save_point_computing_details(
+                course_id, self.value_accessor.points_name, course_infos
+            )
 
-    def compute_points(self, participations, competitions_vector, skills_vector):
-        participations = list(participations)
+    def compute_points(
+        self, course_id, participations, competitions_vector, skills_vector
+    ):
         # Levée d'une Exception s'il n'y a aucun compétiteur
         if len(participations) == 0:
             raise NoCompetitorException("Pas de compétiteurs sur la course")
-        competition_name = participations[0]["competitionName"]
-        self.logger.info(
-            "Calcul des points de la course : " + participations[0]["competitionName"]
-        )
 
         ######## Calcul du temps scratch
         calcul_tps_scratch(participations, self.coef_inter_cat)
 
         ######## Calcul du temps de base
-        tps_base = self.calcul_tps_base(
-            competition_name, competitions_vector, skills_vector
-        )
+        tps_base = self.calcul_tps_base(course_id, competitions_vector, skills_vector)
 
         ####### Calcul du nombre de points
         calcul_points(participations, tps_base)
@@ -120,61 +125,74 @@ class PointsComputer:
         add_A_B_penality(participations)
 
         ######## Création des métadonnées
-        metadata = {
-            "competitionName": participations[0]["competitionName"],
-            "date": participations[0]["date"],
-            "simplifiedCompetitionPhase": participations[0][
-                "simplifiedCompetitionPhase"
-            ],
-            "level": participations[0]["level"],
-            "pointType": self.point_type,
+        course_infos = {
             "tpsBase": tps_base,
-            "coefficientCourse": competitions_vector[competition_name],
+            "coefficientCourse": competitions_vector[course_id],
             "bestCompetitorSkill": skills_vector.min(),
             "penTpsCourse": pen_tps_course,
             "penalitePhasedivision": penalite_phase_division,
         }
-        points = extract_points(participations)
-        return points, metadata
+        return course_infos
 
     def calcul_tps_scratch(self, participations):
         for participation in participations:
-            coef = self.coef_inter_cat[participation["competitorCategory"]]
+            coef = self.coef_inter_cat[participation["cat"]]
             participation["tpsScratch"] = participation["score"] / coef
 
-    def calcul_tps_base(self, competition_name, competitions_vector, skills_vector):
-        return competitions_vector[competition_name] * skills_vector.min()
+    def calcul_tps_base(self, course_id, competitions_vector, skills_vector):
+        return competitions_vector[course_id] * skills_vector.min()
 
     def create_dataframes(self, competition_date, phase):
+        """Crée les dataframes de scores et de participations sur la période
+        [competition_date - table_competition_validity_period, competition_date],
+        à partir de db_service.get_scores_on_period.
+
+        Pour le dernier jour (competition_date), seules les courses dont
+        course.phase_ordre <= phase sont prises en compte (phase est passé tel
+        quel comme last_day_max_phase).
+
+        - scores_df : une ligne par course_id, une colonne par bateau_id,
+          valeur = score_scratch du bateau sur la course ; les cases non
+          remplies valent 0.
+        - participations_df : mêmes lignes et colonnes, 1 si la cellule de
+          scores_df est remplie, 0 sinon.
+
+        Lignes et colonnes sont construites sans doublon (sorted(set(...))).
+        Les résultats dont score_scratch est NULL sont ignorés : la cellule
+        reste à 0 et le masque à 0 (un score de 0 fausserait l'estimation,
+        0 signifiant "temps parfait").
+
+        Parameters
+        ----------
+        competition_date : str, datetime.date ou datetime.datetime
+            Date de fin de la période (dernier jour filtré par phase).
+        phase : float
+            phase_ordre maximal retenu pour les courses du dernier jour.
+
+        Returns
+        -------
+        (pandas.DataFrame, pandas.DataFrame)
+            (scores_df, participations_df)
+        """
+        if isinstance(competition_date, str):
+            competition_date = date.fromisoformat(competition_date[:10])
         starting_date = competition_date - self.table_competition_validity_period
-        competitors_cursor = self.database_service.get_competitors_on_period(
-            starting_date, competition_date, phase=phase
-        )
-        competitors, nb_participations = get_competitors_from_cursor(competitors_cursor)
-        competitions = list(
-            self.database_service.get_competitions_on_period(
-                starting_date, competition_date, phase=phase
+        scores = [
+            (course_id, bateau_id, score_scratch)
+            for course_id, bateau_id, score_scratch in self.db_service.get_scores_on_period(
+                starting_date, competition_date, phase
             )
+            if score_scratch is not None
+        ]
+        course_ids = sorted({course_id for course_id, _, _ in scores})
+        bateau_ids = sorted({bateau_id for _, bateau_id, _ in scores})
+        scores_df = pd.DataFrame(0.0, index=course_ids, columns=bateau_ids, dtype=float)
+        participations_df = pd.DataFrame(
+            0, index=course_ids, columns=bateau_ids, dtype=int
         )
-        scores_df = pd.DataFrame(
-            0, columns=competitors, index=competitions, dtype=float
-        )
-        participations_df = pd.DataFrame(0, columns=competitors, index=competitions)
-        participations = self.database_service.get_participations_on_period(
-            starting_date, competition_date, phase=phase
-        )
-        for participation in participations:
-            competitor = (
-                participation["competitorName"],
-                participation["competitorCategory"],
-            )
-            competition_name = participation["competitionName"]
-            score = participation["score"]
-            category = participation["competitorCategory"]
-            scores_df.at[competition_name, competitor] = (
-                score / self.coef_inter_cat[category]
-            )
-            participations_df.at[competition_name, competitor] = 1
+        for course_id, bateau_id, score_scratch in scores:
+            scores_df.at[course_id, bateau_id] = score_scratch
+            participations_df.at[course_id, bateau_id] = 1
         return scores_df, participations_df
 
 
@@ -190,8 +208,4 @@ def get_competitors_from_cursor(cursor):
 
 
 if __name__ == "__main__":
-    from data_handling.database_service import DatabaseService
-
-    db_service = DatabaseService()
-    point_type = "to_remove"
-    point_computer = PointsComputer(point_type, db_service)
+    pass

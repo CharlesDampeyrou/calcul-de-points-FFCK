@@ -38,11 +38,17 @@ def enregistrer_bateau(cur, conn, boat_id_api, label, type_code):
         membres = []
     membres = [p for p in membres if isinstance(p, dict)]
     if not membres and label:
-        for part in [p.strip() for p in str(label).split("\n") if p.strip()]:
+        # Repli : la fiche n'a pas de "people" (vieux ids legacy "_C1H..." avec
+        # people vide). Le boatId est unique par bateau et quasiment jamais
+        # absent dans les résultats : on l'utilise comme id du membre, avec un
+        # suffixe #position pour un biplace (competiteur.id_api est UNIQUE),
+        # pour ne pas créer un doublon de compétiteur à chaque occurrence.
+        parts = [p.strip() for p in str(label).split("\n") if p.strip()]
+        for pos, part in enumerate(parts, start=1):
             morceaux = part.split(" ", 1)
             membres.append(
                 {
-                    "id": None,
+                    "id": boat_id_api if len(parts) == 1 else f"{boat_id_api}#{pos}",
                     "firstname": morceaux[0] if len(morceaux) > 1 else None,
                     "lastname": morceaux[1] if len(morceaux) > 1 else morceaux[0],
                     "clubId": None,
@@ -70,23 +76,9 @@ def enregistrer_bateau(cur, conn, boat_id_api, label, type_code):
         prenom = (pers.get("firstname") or "").strip() or None
         if not nom and not prenom:
             continue
-        pid = pers.get("id")
-        cur.execute("SELECT id FROM competiteur WHERE id_api = ?", (pid,))
-        c = cur.fetchone()
-        if c:
-            competiteur_id = c[0]
-        else:
-            cur.execute(
-                "INSERT OR IGNORE INTO competiteur (id_api, nom, prenom) VALUES (?, ?, ?)",
-                (pid, nom, prenom),
-            )
-            if pid is None:
-                # id_api NULL : "WHERE id_api = NULL" ne matche jamais,
-                # on prend directement le lastrowid (l'insert n'est pas ignoré).
-                competiteur_id = cur.lastrowid
-            else:
-                cur.execute("SELECT id FROM competiteur WHERE id_api = ?", (pid,))
-                competiteur_id = cur.fetchone()[0]
+        # ref_competiteur évite les doublons quand l'API ne fournit pas d'id :
+        # match par (nom, prenom) exact puis normalisé avant création.
+        competiteur_id = referentiel.ref_competiteur(cur, pers.get("id"), nom, prenom)
         cur.execute(
             "INSERT OR IGNORE INTO bateau_competiteur "
             "(bateau_id, competiteur_id, position) VALUES (?, ?, ?)",
