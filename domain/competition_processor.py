@@ -64,14 +64,13 @@ class CompetitionProcessor:
                         force_value_computing=True,
                     )
 
-    def update_point_type(self, starting_date=None):
-        if starting_date is None:
-            starting_date = self.db_service.get_point_type_computing_start_date(
-                self.point_computer.point_type
-            )
-            if starting_date is None:  # pas de courses à calculer
-                return
-            starting_date = datetime.fromisoformat(starting_date)
+    def update_point_type(self, minimal_start_date=None):
+        starting_date = self.db_service.get_point_type_computing_start_date(
+            self.point_computer.point_type, minimal_start_date=minimal_start_date
+        )
+        if starting_date is None:  # pas de courses à calculer
+            return
+        starting_date = datetime.fromisoformat(starting_date)
         self.db_service.remove_point_type_after_date(
             self.point_computer.point_type, starting_date
         )

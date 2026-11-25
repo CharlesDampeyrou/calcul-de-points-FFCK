@@ -388,20 +388,30 @@ class DBService:
         self.cur.execute(f"DROP TABLE IF EXISTS resultat_methode_{point_name}")
         self.conn.commit()
 
-    def get_point_type_computing_start_date(self, point_type):
+    def get_point_type_computing_start_date(self, point_type, minimal_start_date=None):
         """Retourne la date de la première course (la plus ancienne) qui n'a
         pas encore de ligne dans `course_methode_{point_type}` — typiquement le
         point de départ pour calculer les points d'une méthode donnée.
 
+        La recherche est restreinte aux courses dont la date est supérieure ou
+        égale à `minimal_start_date` (si fournie) : les compétitions antérieures
+        à cette date sont ignorées, même si leurs points n'ont pas été calculés.
+
         Si la table `course_methode_{point_type}` n'existe pas encore, aucune
         course n'a de détails enregistrés : on retourne alors la date de la
-        plus ancienne course. Si toutes les courses ont une entrée (ou s'il
-        n'y a aucune course datée), retourne None.
+        plus ancienne course (dans la limite de `minimal_start_date`). Si
+        toutes les courses de la période ont une entrée (ou s'il n'y a aucune
+        course datée dans la période), retourne None.
 
         Parameters
         ----------
         point_type : str
             Nom de la méthode de calcul (identifiant SQL sûr), ex "ffck".
+        minimal_start_date : str, datetime.date ou datetime.datetime, optionnel
+            Date minimale à partir de laquelle rechercher les compétitions
+            dont les points n'ont pas été calculés. Une str est attendue au
+            format "YYYY-MM-DD" (un ISO complet est tronqué à 10 caractères).
+            Si None, aucune borne inférieure n'est appliquée.
 
         Returns
         -------
@@ -417,19 +427,29 @@ class DBService:
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", point_type or ""):
             raise ValueError(f"Nom de méthode de points invalide : {point_type!r}")
         table = f"course_methode_{point_type}"
+        date_condition = ""
+        params = ()
+        if minimal_start_date is not None:
+            date_condition = " AND c.date >= ?"
+            params = (self._normalize_date(minimal_start_date),)
         self.cur.execute(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
             (table,),
         )
         if self.cur.fetchone() is None:
             # table inexistante : aucune course n'a de détails -> plus ancienne course
-            self.cur.execute("SELECT MIN(date) FROM course WHERE date IS NOT NULL")
+            self.cur.execute(
+                f"SELECT MIN(c.date) FROM course c "
+                f"WHERE c.date IS NOT NULL{date_condition}",
+                params,
+            )
             return self.cur.fetchone()[0]
         self.cur.execute(
             f"SELECT c.date FROM course c "
             f"LEFT JOIN {table} cm ON cm.course_id = c.id "
-            f"WHERE cm.course_id IS NULL AND c.date IS NOT NULL "
-            f"ORDER BY c.date LIMIT 1"
+            f"WHERE cm.course_id IS NULL AND c.date IS NOT NULL{date_condition} "
+            f"ORDER BY c.date LIMIT 1",
+            params,
         )
         row = self.cur.fetchone()
         return row[0] if row else None

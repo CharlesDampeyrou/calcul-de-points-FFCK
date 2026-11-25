@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Alimentation d'une base SQLite avec les résultats de slalom FFCK (CNA Slalom),
-plus post-traitements optionnels (correction des noms C2, revue des phases).
+plus post-traitements optionnels (correction des noms C2, revue des phases,
+mise à jour des niveaux des bateaux).
 
 Point d'entrée unique du dossier data_collection/ ; la logique est dans le
 package ./collecte/ :
@@ -21,6 +22,13 @@ package ./collecte/ :
   nettoyage_doublons.py    suppression des doublons (course_id, bateau_id) :
                            garde le meilleur score_scratch (post-traitement
                            systématique)
+  nettoyage_courses_vides.py   suppression des courses sans aucun résultat
+                           (post-traitement systématique)
+  nettoyage_orphphelins.py     suppression des bateau_competiteur / bateau /
+                           compétiteur non liés à une course (post-traitement
+                           systématique)
+  maj_niveau.py            mise à jour de bateau.niveau pour tous les bateaux
+                           depuis leur fiche API (--update-niveau)
 
 Source : API JSON du site https://slalom.ffck.org (application Vue.js).
 Endpoints utilisés :
@@ -38,7 +46,9 @@ Relancez le même script après une nouvelle saison : les données déjà
 présentes sont ignorées (INSERT OR IGNORE).
 
 Pipeline : collecte -> nettoyage des catégories -> nettoyage des doublons
--> [--correction-noms-c2] -> [--revoir-phases].
+-> suppression des courses sans résultats -> suppression des bateaux /
+compétiteurs sans course -> [--update-niveau] -> [--correction-noms-c2]
+-> [--revoir-phases].
 --dry-run ne s'applique qu'aux post-traitements, nettoyage des catégories inclus
 (pas à la collecte).
 
@@ -86,6 +96,9 @@ from collecte import config, courses, phases, revue_phases, team_events
 from collecte.correction_c2 import corriger_noms_c2
 from collecte.nettoyage_categories import nettoyer_categories
 from collecte.nettoyage_doublons import nettoyer_doublons
+from collecte.nettoyage_courses_vides import nettoyer_courses_sans_resultats
+from collecte.nettoyage_orphphelins import nettoyer_orphelins
+from collecte.maj_niveau import mettre_a_jour_niveaux
 
 
 def main():
@@ -145,10 +158,16 @@ def main():
         help="Avec --revoir-phases : propose aussi tous les noms de courses de la base",
     )
     ap.add_argument(
+        "--update-niveau",
+        action="store_true",
+        help="Après la collecte : met à jour bateau.niveau pour tous les bateaux "
+        "de la base, depuis leur fiche API (slalom.level)",
+    )
+    ap.add_argument(
         "--dry-run",
         action="store_true",
-        help="Ne s'applique qu'aux post-traitements (--correction-noms-c2, --revoir-phases) : "
-        "n'écrit rien en base pour ces étapes",
+        help="Ne s'applique qu'aux post-traitements (--update-niveau, --correction-noms-c2, "
+        "--revoir-phases) : n'écrit rien en base pour ces étapes",
     )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
@@ -201,7 +220,19 @@ def main():
     print("\n=== Nettoyage des doublons ===")
     nettoyer_doublons(db=args.db, dry_run=args.dry_run, verbose=args.verbose)
 
+    # post-traitement systématique : suppression des courses sans aucun résultat
+    print("\n=== Suppression des courses sans résultats ===")
+    nettoyer_courses_sans_resultats(db=args.db, dry_run=args.dry_run, verbose=args.verbose)
+
+    # post-traitement systématique : bateaux / compétiteurs / équipages sans course
+    print("\n=== Suppression des bateaux et compétiteurs sans course ===")
+    nettoyer_orphelins(db=args.db, dry_run=args.dry_run, verbose=args.verbose)
+
     # post-traitements optionnels (chacun ouvre sa propre connexion à la base)
+    if args.update_niveau:
+        print("\n=== Mise à jour des niveaux des bateaux ===")
+        mettre_a_jour_niveaux(db=args.db, dry_run=args.dry_run, verbose=args.verbose)
+
     if args.correction_noms_c2:
         print("\n=== Correction des noms C2 ===")
         corriger_noms_c2(

@@ -57,7 +57,7 @@ def main():
     )
     point_computer = PointsComputer(point_type, value_accessor, db_service)
     competition_processor = CompetitionProcessor(db_service, point_computer)
-    competition_processor.update_point_type(starting_date=start)
+    competition_processor.update_point_type(minimal_start_date=start)
 
 
 if __name__ == "__main__":

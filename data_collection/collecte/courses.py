@@ -8,6 +8,7 @@ import time
 
 from . import api, config, phases, referentiel, team_events
 from .bateaux import enregistrer_bateau
+from .nettoyage_categories import CATEGORIES_AUTORISEES
 from .utils import date_courte, normaliser
 
 
@@ -101,6 +102,17 @@ def enregistrer_course(cur, conn, ev, race):
         type_code = (
             res.get("boatType") or None
         )  # or None pour le cas où la catégorie est "" au lieu de null
+        # Filtrage à la source : seules les catégories autorisées sont prises
+        # en compte (type_code NULL compris). Le bateau n'est même pas
+        # enregistré. nettoyage_categories.py reste en post-traitement pour
+        # nettoyer les vieilles bases déjà collectées.
+        if type_code not in CATEGORIES_AUTORISEES:
+            continue
+        # points à null ou -1 = non calculés par l'API pour ce résultat :
+        # on ignore ce résultat (pas de résultat, pas de bateau).
+        points = res.get("points")
+        if points is None or points == -1:
+            continue
         bateau_id = enregistrer_bateau(
             cur, conn, boat_id_api, boat.get("label"), type_code
         )
@@ -160,10 +172,14 @@ def enregistrer_course(cur, conn, ev, race):
 
         # v2 : points / valeur calculés par la méthode FFCK -> table dédiée
         # (avant : colonnes points / valeur de RESULTAT).
+        # valeur à -1 = non calculée par l'API : on stocke NULL plutôt que -1.
+        valeur = res.get("value")
+        if valeur == -1:
+            valeur = None
         cur.execute(
             "INSERT OR REPLACE INTO resultat_methode_ffck (resultat_id, points, valeur) "
             "VALUES (?, ?, ?)",
-            (resultat_id, res.get("points"), res.get("value")),
+            (resultat_id, points, valeur),
         )
 
         runs = res.get("runs")

@@ -114,23 +114,23 @@ class PointsComputer:
         calcul_points(participations, tps_base)
 
         ####### Calcul des pénalités de course pour les temps scratch trop faibles ou trop élevés
-        pen_tps_course = calcul_pen_tps_course(participations)
-        add_penalties(participations, pen_tps_course)
+        # pen_tps_course = calcul_pen_tps_course(participations)
+        # add_penalties(participations, pen_tps_course)
 
-        ####### Ajout du malus de phase et de division
-        penalite_phase_division = calcul_malus_phase_and_div(participations)
-        add_penalties(participations, penalite_phase_division)
+        # ####### Ajout du malus de phase et de division
+        # penalite_phase_division = calcul_malus_phase_and_div(participations)
+        # add_penalties(participations, penalite_phase_division)
 
-        ####### Ajout du malus de finale A/B
-        add_A_B_penality(participations)
+        # ####### Ajout du malus de finale A/B
+        # add_A_B_penality(participations)
 
         ######## Création des métadonnées
         course_infos = {
             "tpsBase": tps_base,
             "coefficientCourse": competitions_vector[course_id],
             "bestCompetitorSkill": skills_vector.min(),
-            "penTpsCourse": pen_tps_course,
-            "penalitePhasedivision": penalite_phase_division,
+            # "penTpsCourse": pen_tps_course,
+            # "penalitePhasedivision": penalite_phase_division,
         }
         return course_infos
 
